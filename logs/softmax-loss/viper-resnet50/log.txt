@@ -1,0 +1,1 @@
+Downloading http://users.soe.ucsc.edu/~manduchi/VIPeR.v1.0.zip to /Users/andreatomasoni/Desktop/Università/Magistrale/SIV/Progetto/Codice/open-reid-master/examples/data/viper/raw/VIPeR.v1.0.zip

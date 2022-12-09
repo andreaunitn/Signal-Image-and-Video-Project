@@ -171,47 +171,71 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Softmax loss classification")
     # data
-    parser.add_argument('-d', '--dataset', type=str, default='cuhk03',
-                        choices=datasets.names())
+        # datasets.names() = ['viper', 'cuhk01', 'cuhk03', 'market1501', 'dukemtmc']
+    parser.add_argument('-d', '--dataset', type=str, default='cuhk03', choices=datasets.names())
+
+        # bach-size = number of samples (images) that will be propagated through the network every epoch
     parser.add_argument('-b', '--batch-size', type=int, default=256)
+
+        # workers = number of subprocess to use for data loading
     parser.add_argument('-j', '--workers', type=int, default=4)
+
+        # split = number of chunks in which to divide the tensor
     parser.add_argument('--split', type=int, default=0)
-    parser.add_argument('--height', type=int,
-                        help="input height, default: 256 for resnet*, "
-                             "144 for inception")
-    parser.add_argument('--width', type=int,
-                        help="input width, default: 128 for resnet*, "
-                             "56 for inception")
-    parser.add_argument('--combine-trainval', action='store_true',
-                        help="train and val sets together for training, "
-                             "val set alone for validation")
+
+        # height, width = input dimension
+    parser.add_argument('--height', type=int, help="input height, default: 256 for resnet*, " "144 for inception")
+    parser.add_argument('--width', type=int, help="input width, default: 128 for resnet*, " "56 for inception")
+
+        # training set and test set are used both for training
+    parser.add_argument('--combine-trainval', action='store_true', help="train and val sets together for training, " "val set alone for validation")
+    
     # model
-    parser.add_argument('-a', '--arch', type=str, default='resnet50',
-                        choices=models.names())
+        # models.names() = ['inception', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
+    parser.add_argument('-a', '--arch', type=str, default='resnet50', choices=models.names())
+
+        # features = number of features to use
     parser.add_argument('--features', type=int, default=128)
+
+        # dropout = probability of dropping the connections between nodes in order to avoid overfitting
     parser.add_argument('--dropout', type=float, default=0.5)
+   
     # optimizer
-    parser.add_argument('--lr', type=float, default=0.1,
-                        help="learning rate of new parameters, for pretrained "
-                             "parameters it is 10 times smaller than this")
+        # lr = learning rate
+    parser.add_argument('--lr', type=float, default=0.1, help="learning rate of new parameters, for pretrained " "parameters it is 10 times smaller than this")
+
+        # momentum = variant of the stochastic gradient descent that speed up learning and avoid getting stuck in local minima
     parser.add_argument('--momentum', type=float, default=0.9)
+
+        # weight-decay = number that is multiplied to the sum of the squares of all the weights in the network to reduce complexity
     parser.add_argument('--weight-decay', type=float, default=5e-4)
+
     # training configs
     parser.add_argument('--resume', type=str, default='', metavar='PATH')
-    parser.add_argument('--evaluate', action='store_true',
-                        help="evaluation only")
+    parser.add_argument('--evaluate', action='store_true', help="evaluation only")
+
+        # epochs = number of iterations for the network
     parser.add_argument('--epochs', type=int, default=50)
-    parser.add_argument('--start_save', type=int, default=0,
-                        help="start saving checkpoints after specific epoch")
+
+        # start_save = epoch at which to start saving the model
+    parser.add_argument('--start_save', type=int, default=0, help="start saving checkpoints after specific epoch")
+
+        #seed = number used to randomly generate values to assign to the weights of the network
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--print-freq', type=int, default=1)
+
     # metric learning
-    parser.add_argument('--dist-metric', type=str, default='euclidean',
-                        choices=['euclidean', 'kissme'])
+        # dist-metric = distance to learn in a low dimensional space such that similar images in the input space have a lower distance compared to dissimilar images (that will have a higher distance)
+    parser.add_argument('--dist-metric', type=str, default='euclidean', choices=['euclidean', 'kissme'])
+    
     # misc
+        # set working directory
     working_dir = osp.dirname(osp.abspath(__file__))
-    parser.add_argument('--data-dir', type=str, metavar='PATH',
-                        default=osp.join(working_dir, 'data'))
-    parser.add_argument('--logs-dir', type=str, metavar='PATH',
-                        default=osp.join(working_dir, 'logs'))
+
+        # data-dir = where to save data (such as the datasets)
+    parser.add_argument('--data-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'data'))
+
+        # logs-dir = where to save logs files
+    parser.add_argument('--logs-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'logs'))
+    
     main(parser.parse_args())
