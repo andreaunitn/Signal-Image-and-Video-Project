@@ -61,9 +61,17 @@ class BaseTrainer(object):
 
 class Trainer(BaseTrainer):
     def _parse_data(self, inputs):
+
         imgs, _, pids, _ = inputs
         inputs = [Variable(imgs)]
-        targets = Variable(pids.cuda())
+
+        # enabling GPU acceleration on Mac devices
+        if torch.backends.mps.is_available():
+            mps_device = torch.device("mps")
+            targets = Variable(pids.to(mps_device))
+        else:
+            targets = Variable(pids.cuda())
+        
         return inputs, targets
 
     def _forward(self, inputs, targets):

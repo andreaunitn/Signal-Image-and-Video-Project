@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import numpy as np
 from metric_learn.base_metric import BaseMetricLearner
 
-
 class Euclidean(BaseMetricLearner):
     def __init__(self):
         self.M_ = None

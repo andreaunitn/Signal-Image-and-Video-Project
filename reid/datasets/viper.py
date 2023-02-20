@@ -31,7 +31,7 @@ class VIPeR(Dataset):
 
         import hashlib
         from glob import glob
-        from scipy.misc import imsave, imread
+        from imageio import imwrite, imread
         from six.moves import urllib
         from zipfile import ZipFile
 
@@ -65,11 +65,11 @@ class VIPeR(Dataset):
             images = []
             # view-0
             fname = '{:08d}_{:02d}_{:04d}.jpg'.format(pid, 0, 0)
-            imsave(osp.join(images_dir, fname), imread(cam1))
+            imwrite(osp.join(images_dir, fname), imread(cam1))
             images.append([fname])
             # view-1
             fname = '{:08d}_{:02d}_{:04d}.jpg'.format(pid, 1, 0)
-            imsave(osp.join(images_dir, fname), imread(cam2))
+            imwrite(osp.join(images_dir, fname), imread(cam2))
             images.append([fname])
             identities.append(images)
 

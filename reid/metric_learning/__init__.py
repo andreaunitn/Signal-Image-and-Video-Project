@@ -18,7 +18,6 @@ __factory = {
     'rca': RCA_Supervised,
 }
 
-
 def get_metric(algorithm, *args, **kwargs):
     if algorithm not in __factory:
         raise KeyError("Unknown metric:", algorithm)

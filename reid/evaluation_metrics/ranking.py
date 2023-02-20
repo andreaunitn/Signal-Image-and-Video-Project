@@ -6,14 +6,12 @@ from sklearn.metrics import average_precision_score
 
 from ..utils import to_numpy
 
-
 def _unique_sample(ids_dict, num):
-    mask = np.zeros(num, dtype=np.bool)
+    mask = np.zeros(num, dtype=np.bool_)
     for _, indices in ids_dict.items():
         i = np.random.choice(indices)
         mask[i] = True
     return mask
-
 
 def cmc(distmat, query_ids=None, gallery_ids=None,
         query_cams=None, gallery_cams=None, topk=100,

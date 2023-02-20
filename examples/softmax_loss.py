@@ -19,20 +19,24 @@ from reid.utils.data.preprocessor import Preprocessor
 from reid.utils.logging import Logger
 from reid.utils.serialization import load_checkpoint, save_checkpoint
 
+# set and return all the needed elements for the model (dataset, num_classes, train_loader, val_loader, test_loader)
+def get_data(name, split_id, data_dir, height, width, batch_size, workers, combine_trainval):
 
-def get_data(name, split_id, data_dir, height, width, batch_size, workers,
-             combine_trainval):
+    # get the root folder
     root = osp.join(data_dir, name)
 
+    # create a dataset instance
     dataset = datasets.create(name, root, split_id=split_id)
 
+    # set the normalization parameters (cropping and scale factors)
     normalizer = T.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
 
+    # set the training set and teh number of classes
     train_set = dataset.trainval if combine_trainval else dataset.train
-    num_classes = (dataset.num_trainval_ids if combine_trainval
-                   else dataset.num_train_ids)
+    num_classes = (dataset.num_trainval_ids if combine_trainval else dataset.num_train_ids)
 
+    # compose several transforms together
     train_transformer = T.Compose([
         T.RandomSizedRectCrop(height, width),
         T.RandomHorizontalFlip(),
@@ -45,6 +49,7 @@ def get_data(name, split_id, data_dir, height, width, batch_size, workers,
         T.ToTensor(),
         normalizer,
     ])
+
 
     train_loader = DataLoader(
         Preprocessor(train_set, root=dataset.images_dir,
@@ -68,37 +73,46 @@ def get_data(name, split_id, data_dir, height, width, batch_size, workers,
 
 
 def main(args):
+
+    # generate pseudo-random number based on the seed (the seed can be every number)
     np.random.seed(args.seed)
+
+    # set the seed for generating random numbers
     torch.manual_seed(args.seed)
+    
+    # enable the buildin auto-tuner in order to find the best algorithm to use
     cudnn.benchmark = True
 
-    # Redirect print to both console and log file
+    # redirect print to both console and log file
     if not args.evaluate:
         sys.stdout = Logger(osp.join(args.logs_dir, 'log.txt'))
 
-    # Create data loaders
+    # create data loaders
     if args.height is None or args.width is None:
-        args.height, args.width = (144, 56) if args.arch == 'inception' else \
-                                  (256, 128)
-    dataset, num_classes, train_loader, val_loader, test_loader = \
-        get_data(args.dataset, args.split, args.data_dir, args.height,
-                 args.width, args.batch_size, args.workers,
-                 args.combine_trainval)
+        args.height, args.width = (144, 56) if args.arch == 'inception' else (256, 128)
+    
+        # retrieve the dataset, the number of classes, the train, valuation and test loaders
+    dataset, num_classes, train_loader, val_loader, test_loader = get_data(args.dataset, args.split, args.data_dir, args.height, args.width, args.batch_size, args.workers, args.combine_trainval)
 
-    # Create model
-    model = models.create(args.arch, num_features=args.features,
-                          dropout=args.dropout, num_classes=num_classes)
+    # create model with the specified parameters
+    model = models.create(args.arch, num_features=args.features, dropout=args.dropout, num_classes=num_classes)
 
-    # Load from checkpoint
+    # if training was interrupted before the finish, it resumes by loading the checkpoint (saved in a specific file)
     start_epoch = best_top1 = 0
     if args.resume:
         checkpoint = load_checkpoint(args.resume)
         model.load_state_dict(checkpoint['state_dict'])
         start_epoch = checkpoint['epoch']
         best_top1 = checkpoint['best_top1']
-        print("=> Start epoch {}  best top1 {:.1%}"
-              .format(start_epoch, best_top1))
-    model = nn.DataParallel(model).cuda()
+        print("=> Start epoch {}  best top1 {:.1%}".format(start_epoch, best_top1))
+
+    # parallelize the execution of the given module by splitting the input across the specified devices
+    # enabling GPU acceleration on Mac devices
+    if torch.backends.mps.is_available():
+        mps_device = torch.device("mps")
+        model = nn.DataParallel(model).to(mps_device)
+    else:
+        model = nn.DataParallel(model).cuda()
 
     # Distance metric
     metric = DistanceMetric(algorithm=args.dist_metric)
@@ -114,9 +128,16 @@ def main(args):
         return
 
     # Criterion
-    criterion = nn.CrossEntropyLoss().cuda()
+    # choice of the loss function
+    # enabling GPU acceleration on Mac devices
+    if torch.backends.mps.is_available():
+        mps_device = torch.device("mps")
+        criterion = nn.CrossEntropyLoss().to(mps_device)
+    else:
+        criterion = nn.CrossEntropyLoss().cuda()
 
     # Optimizer
+    # performe a parameter optimization with Stochastic Gradient Descent
     if hasattr(model.module, 'base'):
         base_param_ids = set(map(id, model.module.base.parameters()))
         new_params = [p for p in model.parameters() if
@@ -135,6 +156,7 @@ def main(args):
     trainer = Trainer(model, criterion)
 
     # Schedule learning rate
+    # adjust the learning rate based on the number of epochs
     def adjust_lr(epoch):
         step_size = 60 if args.arch == 'inception' else 40
         lr = args.lr * (0.1 ** (epoch // step_size))
@@ -161,6 +183,7 @@ def main(args):
               format(epoch, top1, best_top1, ' *' if is_best else ''))
 
     # Final test
+    # perform an ultimate test with the best model found
     print('Test with best model:')
     checkpoint = load_checkpoint(osp.join(args.logs_dir, 'model_best.pth.tar'))
     model.module.load_state_dict(checkpoint['state_dict'])
