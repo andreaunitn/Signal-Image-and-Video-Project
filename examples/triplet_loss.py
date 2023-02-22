@@ -106,7 +106,13 @@ def main(args):
         best_top1 = checkpoint['best_top1']
         print("=> Start epoch {}  best top1 {:.1%}"
               .format(start_epoch, best_top1))
-    model = nn.DataParallel(model).cuda()
+
+    # enabling GPU acceleration on Mac devices
+    if torch.backends.mps.is_available():
+        mps_device = torch.device("mps")
+        model = nn.DataParallel(model).to(mps_device)
+    else:
+        model = nn.DataParallel(model).cuda()
 
     # Distance metric
     metric = DistanceMetric(algorithm=args.dist_metric)
@@ -122,7 +128,12 @@ def main(args):
         return
 
     # Criterion
-    criterion = TripletLoss(margin=args.margin).cuda()
+    # enabling GPU acceleration on Mac devices
+    if torch.backends.mps.is_available():
+        mps_device = torch.device("mps")
+        criterion = TripletLoss(margin=args.margin).to(mps_device)
+    else:
+        criterion = TripletLoss(margin=args.margin).cuda()
 
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr,

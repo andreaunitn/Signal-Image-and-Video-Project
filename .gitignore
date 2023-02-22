@@ -4,6 +4,7 @@
 .fuse_hidden*
 
 /env/*
+/logs/*
 
 # KDE directory preferences
 .directory
