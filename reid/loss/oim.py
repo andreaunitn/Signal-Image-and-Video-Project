@@ -1,34 +1,47 @@
-from __future__ import absolute_import
-
 import torch
 import torch.nn.functional as F
 from torch import nn, autograd
 
 
 class OIM(autograd.Function):
-    def __init__(self, lut, momentum=0.5):
-        super(OIM, self).__init__()
-        self.lut = lut
-        self.momentum = momentum
-
-    def forward(self, inputs, targets):
-        self.save_for_backward(inputs, targets)
-        outputs = inputs.mm(self.lut.t())
+    @staticmethod
+    def forward(ctx, inputs, targets, lut, momentum=0.5):
+        ctx.save_for_backward(inputs, targets, lut)
+        ctx.momentum = momentum
+        outputs = inputs.mm(lut.t())
         return outputs
 
-    def backward(self, grad_outputs):
-        inputs, targets = self.saved_tensors
-        grad_inputs = None
-        if self.needs_input_grad[0]:
-            grad_inputs = grad_outputs.mm(self.lut)
-        for x, y in zip(inputs, targets):
-            self.lut[y] = self.momentum * self.lut[y] + (1. - self.momentum) * x
-            self.lut[y] /= self.lut[y].norm()
-        return grad_inputs, None
+    @staticmethod
+    def backward(ctx, grad_outputs):
+        inputs, targets, lut = ctx.saved_tensors
+        grad_inputs = grad_targets = grad_lut = None
+        if ctx.needs_input_grad[0]:
+            grad_inputs = grad_outputs.mm(lut)
+        if ctx.needs_input_grad[1]:
+            unique_targets = torch.unique(targets)
+            if grad_outputs.is_cuda:
+                grad_targets = torch.zeros_like(targets).scatter_(
+                    0, targets.data.cpu(), grad_outputs.data.cpu())
+                grad_targets = grad_targets.cuda()
+            else:
+                grad_targets = torch.zeros_like(targets).scatter_(
+                    0, targets.data, grad_outputs.data)
+            for t in unique_targets:
+                inds = torch.nonzero(targets == t).squeeze()
+                lut[t] = OIM._update_lut(lut[t], inputs[inds],
+                                                  momentum=ctx.momentum)
+                lut[t] /= lut[t].norm()
+            grad_targets /= unique_targets.size(0)
+        return grad_inputs, grad_targets, grad_lut, None
+
+    @staticmethod
+    def _update_lut(lut, inputs, momentum):
+        lut.mul_(momentum).add_(torch.mean(inputs, dim=0), alpha=1 - momentum)
+        return lut
 
 
 def oim(inputs, targets, lut, momentum=0.5):
-    return OIM(lut, momentum=momentum)(inputs, targets)
+    return OIM.apply(inputs, targets, lut, momentum)
 
 
 class OIMLoss(nn.Module):
@@ -48,5 +61,5 @@ class OIMLoss(nn.Module):
         inputs = oim(inputs, targets, self.lut, momentum=self.momentum)
         inputs *= self.scalar
         loss = F.cross_entropy(inputs, targets, weight=self.weight,
-                               size_average=self.size_average)
+                               reduction='mean' if self.size_average else 'sum')
         return loss, inputs
