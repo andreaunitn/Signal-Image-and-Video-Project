@@ -2,43 +2,30 @@ import torch
 import torch.nn.functional as F
 from torch import nn, autograd
 
-
 class OIM(autograd.Function):
     @staticmethod
     def forward(ctx, inputs, targets, lut, momentum=0.5):
-        ctx.save_for_backward(inputs, targets, lut)
+        ctx.save_for_backward(inputs, targets)
+        ctx.lut = lut
         ctx.momentum = momentum
         outputs = inputs.mm(lut.t())
         return outputs
 
     @staticmethod
     def backward(ctx, grad_outputs):
-        inputs, targets, lut = ctx.saved_tensors
-        grad_inputs = grad_targets = grad_lut = None
+        inputs, targets = ctx.saved_tensors
+        lut = ctx.lut
+        momentum = ctx.momentum
+        grad_inputs = grad_targets = None
+
         if ctx.needs_input_grad[0]:
             grad_inputs = grad_outputs.mm(lut)
-        if ctx.needs_input_grad[1]:
-            unique_targets = torch.unique(targets)
-            if grad_outputs.is_cuda:
-                grad_targets = torch.zeros_like(targets).scatter_(
-                    0, targets.data.cpu(), grad_outputs.data.cpu())
-                grad_targets = grad_targets.cuda()
-            else:
-                grad_targets = torch.zeros_like(targets).scatter_(
-                    0, targets.data, grad_outputs.data)
-            for t in unique_targets:
-                inds = torch.nonzero(targets == t).squeeze()
-                lut[t] = OIM._update_lut(lut[t], inputs[inds],
-                                                  momentum=ctx.momentum)
-                lut[t] /= lut[t].norm()
-            grad_targets /= unique_targets.size(0)
-        return grad_inputs, grad_targets, grad_lut, None
 
-    @staticmethod
-    def _update_lut(lut, inputs, momentum):
-        lut.mul_(momentum).add_(torch.mean(inputs, dim=0), alpha=1 - momentum)
-        return lut
+        for x, y in zip(inputs, targets):
+            lut[y] = momentum * lut[y] + (1. - momentum) * x
+            lut[y] /= lut[y].norm()
 
+        return grad_inputs, grad_targets, None, None
 
 def oim(inputs, targets, lut, momentum=0.5):
     return OIM.apply(inputs, targets, lut, momentum)
