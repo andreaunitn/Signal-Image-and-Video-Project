@@ -21,6 +21,9 @@ from reid.utils.data.sampler import RandomIdentitySampler
 from reid.utils.logging import Logger
 from reid.utils.serialization import load_checkpoint, save_checkpoint
 
+import warnings
+warnings.filterwarnings("ignore")
+
 
 def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
              workers, combine_trainval):
@@ -94,8 +97,7 @@ def main(args):
     # Create model
     # Hacking here to let the classifier be the last feature embedding layer
     # Net structure: avgpool -> FC(1024) -> FC(args.features)
-    model = models.create(args.arch, num_features=1024,
-                          dropout=args.dropout, num_classes=args.features)
+    model = models.create(args.arch, num_features=1024, dropout=args.dropout, num_classes=args.features)
 
     # Load from checkpoint
     start_epoch = best_top1 = 0
@@ -144,8 +146,13 @@ def main(args):
 
     # Schedule learning rate
     def adjust_lr(epoch):
-        lr = args.lr if epoch <= 100 else \
-            args.lr * (0.001 ** ((epoch - 100) / 50.0))
+        if epoch <= 39:
+            lr = args.lr
+        elif epoch >= 40 and epoch <= 69:
+            lr = args.lr * 0.1
+        else:
+            lr = args.lr * 0.1 * 0.1
+
         for g in optimizer.param_groups:
             g['lr'] = lr * g.get('lr_mult', 1)
 
@@ -179,9 +186,9 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Triplet loss classification")
     # data
-    parser.add_argument('-d', '--dataset', type=str, default='cuhk03',
+    parser.add_argument('-d', '--dataset', type=str, default='market1501',
                         choices=datasets.names())
-    parser.add_argument('-b', '--batch-size', type=int, default=256)
+    parser.add_argument('-b', '--batch-size', type=int, default=64)
     parser.add_argument('-j', '--workers', type=int, default=4)
     parser.add_argument('--split', type=int, default=0)
     parser.add_argument('--height', type=int,
@@ -204,17 +211,17 @@ if __name__ == '__main__':
     parser.add_argument('--features', type=int, default=128)
     parser.add_argument('--dropout', type=float, default=0)
     # loss
-    parser.add_argument('--margin', type=float, default=0.5,
-                        help="margin of the triplet loss, default: 0.5")
+    parser.add_argument('--margin', type=float, default=0.3,
+                        help="margin of the triplet loss, default: 0.3")
     # optimizer
-    parser.add_argument('--lr', type=float, default=0.0002,
+    parser.add_argument('--lr', type=float, default=0.00035,
                         help="learning rate of all parameters")
     parser.add_argument('--weight-decay', type=float, default=5e-4)
     # training configs
     parser.add_argument('--resume', type=str, default='', metavar='PATH')
     parser.add_argument('--evaluate', action='store_true',
                         help="evaluation only")
-    parser.add_argument('--epochs', type=int, default=150)
+    parser.add_argument('--epochs', type=int, default=120)
     parser.add_argument('--start_save', type=int, default=0,
                         help="start saving checkpoints after specific epoch")
     parser.add_argument('--seed', type=int, default=1)

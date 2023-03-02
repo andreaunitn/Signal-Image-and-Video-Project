@@ -3,10 +3,7 @@ from collections import defaultdict
 
 import numpy as np
 import torch
-from torch.utils.data.sampler import (
-    Sampler, SequentialSampler, RandomSampler, SubsetRandomSampler,
-    WeightedRandomSampler)
-
+from torch.utils.data.sampler import (Sampler)
 
 class RandomIdentitySampler(Sampler):
     def __init__(self, data_source, num_instances=1):
