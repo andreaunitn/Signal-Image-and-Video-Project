@@ -22,8 +22,7 @@ from reid.trainers import Trainer
 from reid import datasets
 from reid import models
 
-sys.path.append(os.path.abspath('../tricks'))
-import tricks as t
+import tricks
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -140,7 +139,7 @@ def main(args):
     # Trick 1: Warmup Learning Rate
     def adjust_lr(epoch):
 
-        if t.GetTrick() == 0:
+        if tricks.GetTrick() == 0:
             if epoch <= 39:
                 lr = args.lr
             elif epoch >= 40 and epoch <= 69:
