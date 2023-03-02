@@ -2,10 +2,18 @@ import os.path as osp
 import argparse
 import os
 
+trick_number = 0
+
+def GetTrick():
+    return trick_number
+
 def main(args):
     batch_size = args.k * args.p
     dataset = args.d
+    
+    global trick_number
     trick_number = args.tricks
+
     k = args.k
     epochs = args.epochs
     data_dir = args.data_dir

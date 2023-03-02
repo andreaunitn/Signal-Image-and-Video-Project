@@ -1,6 +1,7 @@
 from __future__ import print_function, absolute_import
 import os.path as osp
 import argparse
+import os
 
 from torch.utils.data import DataLoader
 from torch.backends import cudnn
@@ -20,6 +21,9 @@ from reid.loss import TripletLoss
 from reid.trainers import Trainer
 from reid import datasets
 from reid import models
+
+sys.path.append(os.path.abspath('../tricks'))
+import tricks as t
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -99,7 +103,7 @@ def main(args):
         best_top1 = checkpoint['best_top1']
         print("=> Start epoch {}  best top1 {:.1%}".format(start_epoch, best_top1))
 
-    # enabling GPU acceleration on Mac devices
+    # Enabling GPU acceleration on Mac devices
     if torch.backends.mps.is_available():
         mps_device = torch.device("mps")
         model = nn.DataParallel(model).to(mps_device)
@@ -120,7 +124,7 @@ def main(args):
         return
 
     # Criterion
-    # enabling GPU acceleration on Mac devices
+    # Enabling GPU acceleration on Mac devices
     if torch.backends.mps.is_available():
         mps_device = torch.device("mps")
         criterion = TripletLoss(margin=args.margin).to(mps_device)
@@ -133,15 +137,27 @@ def main(args):
     # Trainer
     trainer = Trainer(model, criterion)
 
-    # Schedule learning rate
+    # Trick 1: Warmup Learning Rate
     def adjust_lr(epoch):
-        if epoch <= 39:
-            lr = args.lr
-        elif epoch >= 40 and epoch <= 69:
-            lr = args.lr * 0.1
-        else:
-            lr = args.lr * 0.1 * 0.1
 
+        if t.GetTrick() == 0:
+            if epoch <= 39:
+                lr = args.lr
+            elif epoch >= 40 and epoch <= 69:
+                lr = args.lr * 0.1
+            else:
+                lr = args.lr * 0.1 * 0.1
+        else:
+            if epoch <= 10:
+                lr = (args.lr / 10) * (epoch / 10)
+            elif 11 <= epoch <= 40:
+                lr = args.lr
+            elif 41 <= epoch <= 70:
+                lr = args.lr / 10
+            else:
+                lr = args.lr / 100
+
+        
         for g in optimizer.param_groups:
             g['lr'] = lr * g.get('lr_mult', 1)
 
