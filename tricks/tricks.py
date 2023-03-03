@@ -1,27 +1,20 @@
 import os.path as osp
+import subprocess
 import argparse
-import os
-
-trick_number = 0
-
-def GetTrick():
-    return trick_number
 
 def main(args):
     batch_size = args.k * args.p
     dataset = args.d
     
-    global trick_number
     trick_number = args.tricks
 
     k = args.k
     epochs = args.epochs
-    data_dir = args.data_dir
     logs_dir = args.logs_dir
 
     # command to execute triplet loss
-    command = "python3 triplet_loss.py -d {} -b {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {}".format(dataset, batch_size, k, logs_dir, epochs)
-    os.system(command)
+    command = "python3 triplet_loss.py -d {} -b {} -t {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {}".format(dataset, batch_size, trick_number, k, logs_dir, epochs)
+    subprocess.run(command, shell = True)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = "Bag of Tricks and A Strong Baseline for Deep Person Re-identification")

@@ -22,8 +22,6 @@ from reid.trainers import Trainer
 from reid import datasets
 from reid import models
 
-import tricks
-
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -136,13 +134,14 @@ def main(args):
     # Trainer
     trainer = Trainer(model, criterion)
 
+    # -----------------------------
     # Trick 1: Warmup Learning Rate
     def adjust_lr(epoch):
 
-        if tricks.GetTrick() == 0:
+        if args.t == 0:
             if epoch <= 39:
                 lr = args.lr
-            elif epoch >= 40 and epoch <= 69:
+            elif 40 <= epoch <= 69:
                 lr = args.lr * 0.1
             else:
                 lr = args.lr * 0.1 * 0.1
@@ -159,6 +158,8 @@ def main(args):
         
         for g in optimizer.param_groups:
             g['lr'] = lr * g.get('lr_mult', 1)
+    
+    # -----------------------------
 
     # Start training
     for epoch in range(start_epoch, args.epochs):
@@ -229,5 +230,8 @@ if __name__ == '__main__':
     working_dir = osp.dirname(osp.abspath(__file__))
     parser.add_argument('--data-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'data'))
     parser.add_argument('--logs-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'logs'))
+
+    # trick number
+    parser.add_argument('-t', type = int, default=0)
    
     main(parser.parse_args())
