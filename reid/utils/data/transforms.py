@@ -28,7 +28,21 @@ class RandomSizedRectCrop(object):
 
     def __call__(self, img):
 
-        for attempt in range(10):
+        # Resize
+        img = img.resize((self.width, self.height), self.interpolation)
+
+        # Padding
+        w, h = img.size
+        width = w + 2 * 10
+        height = h + 2 * 10
+
+        result = Image.new(img.mode, (width, height), (0,0,0))
+        result.paste(img, (10,10))
+
+        img = result
+
+        for _ in range(10):
+
             area = img.size[0] * img.size[1]
             target_area = random.uniform(0.64, 1.0) * area
             aspect_ratio = random.uniform(2, 3)
@@ -79,7 +93,7 @@ class RandomErasingAugmentation(object):
             y_e = random.randint(0, H_e)
 
             # checking if the rectangle region is inside the image size
-            if x_e + W_e <= self.width and y_e + H_e <= self.height:
+            if x_e + W_e <= img.size[0] and y_e + H_e <= img.size[1]:
 
                 # calculating the mean 
                 stat = ImageStat.Stat(img)
