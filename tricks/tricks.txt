@@ -1,0 +1,31 @@
+Trick 1:    
+
+    # -----------------------------
+    # Trick 1: Warmup Learning Rate
+    def adjust_lr(epoch):
+
+        if args.t == 0:
+            if epoch <= 39:
+                lr = args.lr
+            elif 40 <= epoch <= 69:
+                lr = args.lr * 0.1
+            else:
+                lr = args.lr * 0.1 * 0.1
+        else:
+            if epoch <= 10:
+                lr = (args.lr / 10) * (epoch / 10)
+            elif 11 <= epoch <= 40:
+                lr = args.lr
+            elif 41 <= epoch <= 70:
+                lr = args.lr / 10
+            else:
+                lr = args.lr / 100
+
+        
+        for g in optimizer.param_groups:
+            g['lr'] = lr * g.get('lr_mult', 1)
+    
+    # -----------------------------
+
+
+Trick 2:

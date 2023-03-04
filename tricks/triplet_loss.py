@@ -1,7 +1,6 @@
 from __future__ import print_function, absolute_import
 import os.path as osp
 import argparse
-import os
 
 from torch.utils.data import DataLoader
 from torch.backends import cudnn
@@ -26,7 +25,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def get_data(name, split_id, data_dir, height, width, batch_size, num_instances, workers, combine_trainval):
+def get_data(name, split_id, data_dir, height, width, batch_size, num_instances, workers, combine_trainval, tricks):
     root = osp.join(data_dir, name)
 
     dataset = datasets.create(name, root, split_id=split_id)
@@ -36,12 +35,21 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
     train_set = dataset.trainval if combine_trainval else dataset.train
     num_classes = (dataset.num_trainval_ids if combine_trainval else dataset.num_train_ids)
 
-    train_transformer = T.Compose([
-        T.RandomSizedRectCrop(height, width),
-        T.RandomHorizontalFlip(),
-        T.ToTensor(),
-        normalizer,
-    ])
+    if tricks < 2:
+        train_transformer = T.Compose([
+            T.RandomSizedRectCrop(height, width),
+            T.RandomHorizontalFlip(),
+            T.ToTensor(),
+            normalizer,
+        ])
+    else:
+        train_transformer = T.Compose([
+            T.RandomSizedRectCrop(height, width),
+            T.RandomErasingAugmentation(height, width),
+            T.RandomHorizontalFlip(),
+            T.ToTensor(),
+            normalizer,
+        ])
 
     test_transformer = T.Compose([
         T.RectScale(height, width),
@@ -84,7 +92,7 @@ def main(args):
     if args.height is None or args.width is None:
         args.height, args.width = (144, 56) if args.arch == 'inception' else (256, 128)
     
-    dataset, num_classes, train_loader, val_loader, test_loader = get_data(args.dataset, args.split, args.data_dir, args.height, args.width, args.batch_size, args.num_instances, args.workers, args.combine_trainval)
+    dataset, num_classes, train_loader, val_loader, test_loader = get_data(args.dataset, args.split, args.data_dir, args.height, args.width, args.batch_size, args.num_instances, args.workers, args.combine_trainval, args.t)
 
     # Create model
     # Hacking here to let the classifier be the last feature embedding layer
@@ -162,7 +170,7 @@ def main(args):
     # -----------------------------
 
     # Start training
-    for epoch in range(start_epoch, args.epochs):
+    for epoch in range(start_epoch + 1, args.epochs + 1):
         adjust_lr(epoch)
         trainer.train(epoch, train_loader, optimizer)
         
