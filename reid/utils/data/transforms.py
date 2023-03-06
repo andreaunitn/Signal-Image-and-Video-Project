@@ -75,19 +75,21 @@ class RandomErasingAugmentation(object):
             W_e = int(round(math.sqrt(target_area / aspect_ratio)))
 
             # selecting random point
-            x_e = random.randint(0, W_e)
-            y_e = random.randint(0, H_e)
+            x_e = random.randint(0, img.size[0] - W_e)
+            y_e = random.randint(0, img.size[1] - H_e)
+
+            print("H_e: {}, W_e: {}, x_e: {}, y_e: {}, height: {}, width: {}".format(H_e, W_e, x_e, y_e, img.size[1], img.size[0]))
 
             # checking if the rectangle region is inside the image size
-            if x_e + W_e <= self.width and y_e + H_e <= self.height:
+            if x_e + W_e <= img.size[0] and y_e + H_e <= img.size[1]:
 
                 # calculating the mean 
                 stat = ImageStat.Stat(img)
                 mean = [int(elem) for elem in stat.mean]
 
                 # adding the mean
-                img = np.asarray(img, dtype = "int32")
-                img[x_e : x_e + W_e, y_e : y_e + H_e] = mean
+                img = np.asarray(img, dtype = "float32")
+                img[y_e : y_e + H_e, x_e : x_e + W_e] = mean
 
                 img = Image.fromarray(img.astype('uint8'), 'RGB')
 
