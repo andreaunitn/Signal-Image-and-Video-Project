@@ -135,12 +135,8 @@ def main(args):
 
     # Schedule learning rate
     def adjust_lr(epoch):
-        if epoch <= 39:
-            lr = args.lr
-        elif epoch >= 40 and epoch <= 69:
-            lr = args.lr * 0.1
-        else:
-            lr = args.lr * 0.1 * 0.1
+        lr = args.lr if epoch <= 100 else \
+            args.lr * (0.001 ** ((epoch - 100) / 50.0))
 
         for g in optimizer.param_groups:
             g['lr'] = lr * g.get('lr_mult', 1)
@@ -175,44 +171,54 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Triplet loss classification")
-    
     # data
-    parser.add_argument('-d', '--dataset', type=str, default='market1501', choices=datasets.names())
-    parser.add_argument('-b', '--batch-size', type=int, default=64)
+    parser.add_argument('-d', '--dataset', type=str, default='cuhk03',
+                        choices=datasets.names())
+    parser.add_argument('-b', '--batch-size', type=int, default=256)
     parser.add_argument('-j', '--workers', type=int, default=4)
     parser.add_argument('--split', type=int, default=0)
-    parser.add_argument('--height', type=int, help="input height, default: 256 for resnet*, 144 for inception")
-    parser.add_argument('--width', type=int, help="input width, default: 128 for resnet*, 56 for inception")
-    parser.add_argument('--combine-trainval', action='store_true', help="train and val sets together for training, val set alone for validation")
-    parser.add_argument('--num-instances', type=int, default=4, help="each minibatch consist of (batch_size // num_instances) identities, and each identity has num_instances instances, default: 4")
-    
+    parser.add_argument('--height', type=int,
+                        help="input height, default: 256 for resnet*, "
+                             "144 for inception")
+    parser.add_argument('--width', type=int,
+                        help="input width, default: 128 for resnet*, "
+                             "56 for inception")
+    parser.add_argument('--combine-trainval', action='store_true',
+                        help="train and val sets together for training, "
+                             "val set alone for validation")
+    parser.add_argument('--num-instances', type=int, default=4,
+                        help="each minibatch consist of "
+                             "(batch_size // num_instances) identities, and "
+                             "each identity has num_instances instances, "
+                             "default: 4")
     # model
-    parser.add_argument('-a', '--arch', type=str, default='resnet50', choices=models.names())
+    parser.add_argument('-a', '--arch', type=str, default='resnet50',
+                        choices=models.names())
     parser.add_argument('--features', type=int, default=128)
     parser.add_argument('--dropout', type=float, default=0)
-    
     # loss
-    parser.add_argument('--margin', type=float, default=0.3, help="margin of the triplet loss, default: 0.3")
-    
+    parser.add_argument('--margin', type=float, default=0.5,
+                        help="margin of the triplet loss, default: 0.5")
     # optimizer
-    parser.add_argument('--lr', type=float, default=0.00035, help="learning rate of all parameters")
-    
+    parser.add_argument('--lr', type=float, default=0.0002,
+                        help="learning rate of all parameters")
     parser.add_argument('--weight-decay', type=float, default=5e-4)
-    
     # training configs
     parser.add_argument('--resume', type=str, default='', metavar='PATH')
-    parser.add_argument('--evaluate', action='store_true', help="evaluation only")
-    parser.add_argument('--epochs', type=int, default=120)
-    parser.add_argument('--start_save', type=int, default=0, help="start saving checkpoints after specific epoch")
+    parser.add_argument('--evaluate', action='store_true',
+                        help="evaluation only")
+    parser.add_argument('--epochs', type=int, default=150)
+    parser.add_argument('--start_save', type=int, default=0,
+                        help="start saving checkpoints after specific epoch")
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--print-freq', type=int, default=1)
-    
     # metric learning
-    parser.add_argument('--dist-metric', type=str, default='euclidean', choices=['euclidean', 'kissme'])
-    
+    parser.add_argument('--dist-metric', type=str, default='euclidean',
+                        choices=['euclidean', 'kissme'])
     # misc
     working_dir = osp.dirname(osp.abspath(__file__))
-    parser.add_argument('--data-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'data'))
-    parser.add_argument('--logs-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'logs'))
-   
+    parser.add_argument('--data-dir', type=str, metavar='PATH',
+                        default=osp.join(working_dir, 'data'))
+    parser.add_argument('--logs-dir', type=str, metavar='PATH',
+                        default=osp.join(working_dir, 'logs'))
     main(parser.parse_args())
