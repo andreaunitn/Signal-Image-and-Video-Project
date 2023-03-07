@@ -27,7 +27,7 @@ class RandomSizedRectCrop(object):
 
     def __call__(self, img):
 
-        for attempt in range(10):
+        for _ in range(10):
             area = img.size[0] * img.size[1]
             target_area = random.uniform(0.64, 1.0) * area
             aspect_ratio = random.uniform(2, 3)

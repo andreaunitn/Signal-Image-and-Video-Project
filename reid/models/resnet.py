@@ -7,8 +7,7 @@ from torchvision.models import resnet18,resnet34,resnet50,resnet101,resnet152
 from torchvision.models import ResNet18_Weights,ResNet34_Weights,ResNet50_Weights,ResNet101_Weights,ResNet152_Weights
 
 
-__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101',
-           'resnet152']
+__all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
 
 class ResNet(nn.Module):
     __factory = {
@@ -19,19 +18,18 @@ class ResNet(nn.Module):
         152: resnet152,
     }
 
-    def __init__(self, depth, weights=None, cut_at_pooling=False,
-                 num_features=0, norm=False, dropout=0, num_classes=0):
+    def __init__(self, depth, weights=None, cut_at_pooling=False, num_features=0, norm=False, dropout=0, num_classes=0):
 
         if depth == 18:
             weights = ResNet18_Weights.IMAGENET1K_V1
         elif depth == 34:
             weights = ResNet34_Weights.IMAGENET1K_V1
         elif depth == 50:
-            weights = ResNet50_Weights.IMAGENET1K_V1
+            weights = ResNet50_Weights.IMAGENET1K_V2
         elif depth == 101:
-            weights = ResNet101_Weights.IMAGENET1K_V1
+            weights = ResNet101_Weights.IMAGENET1K_V2
         elif depth == 152:
-            weights = ResNet152_Weights.IMAGENET1K_V1
+            weights = ResNet152_Weights.IMAGENET1K_V2
 
         super(ResNet, self).__init__()
 

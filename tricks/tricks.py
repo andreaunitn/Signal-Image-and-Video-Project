@@ -12,7 +12,7 @@ def main(args):
     logs_dir = args.logs_dir
 
     # command to execute triplet loss
-    command = "cd .. && python3 examples/triplet_loss.py -d {} -b {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {}".format(dataset, batch_size, k, logs_dir, epochs)
+    command = "cd .. && python3 examples/triplet_loss.py -d {} -b {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {} --combine-trainval".format(dataset, batch_size, k, logs_dir, epochs)
     os.system(command)
 
 if __name__ == "__main__":
