@@ -8,11 +8,10 @@ def main(args):
     trick_number = args.tricks
     k = args.k
     epochs = args.epochs
-    data_dir = args.data_dir
     logs_dir = args.logs_dir
 
     # command to execute triplet loss
-    command = "cd .. && python3 examples/triplet_loss.py -d {} -b {} --tricks {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {} --combine-trainval".format(dataset, batch_size, trick_number, k, logs_dir, epochs)
+    command = "python3 triplet_loss.py -d {} -b {} -t {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {} --combine-trainval".format(dataset, batch_size, trick_number, k, logs_dir, epochs)
     os.system(command)
 
 if __name__ == "__main__":
