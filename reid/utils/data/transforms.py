@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 
 from torchvision.transforms import *
-from PIL import Image, ImageStat
-import numpy as np
+from PIL import Image
 import random
 import math
 
@@ -62,48 +61,3 @@ class RandomSizedRectCrop(object):
         # Fallback
         scale = RectScale(self.height, self.width, interpolation=self.interpolation)
         return scale(img)
-
-# -----------------------------
-# Trick 2: Random Erasing Augmentation
-def decision(probability):
-    return random.random() < probability
-
-class RandomErasingAugmentation(object):
-    def __init__(self, height, width, interpolation = Image.BILINEAR):
-        self.height = height
-        self.width = width
-        self.interpolation = interpolation
-
-    def __call__(self, img):
-
-        if decision(0.5):
-            return img
-
-        while True:
-            area = img.size[0] * img.size[1]
-            target_area = random.uniform(0.02, 0.4) * area
-            aspect_ratio = random.uniform(0.3, 3.33)
-
-            # calculating height and width of the rectagle region to erase
-            H_e = int(round(math.sqrt(target_area * aspect_ratio)))
-            W_e = int(round(math.sqrt(target_area / aspect_ratio)))
-
-            # selecting random point
-            x_e = random.randint(0, W_e)
-            y_e = random.randint(0, H_e)
-
-            # checking if the rectangle region is inside the image size
-            if x_e + W_e <= img.size[0] and y_e + H_e <= img.size[1]:
-
-                # calculating the mean 
-                stat = ImageStat.Stat(img)
-                mean = [int(elem) for elem in stat.mean]
-
-                # adding the mean
-                img = np.asarray(img, dtype = "int32")
-                img[x_e : x_e + W_e, y_e : y_e + H_e] = mean
-
-                img = Image.fromarray(img.astype('uint8'), 'RGB')
-
-                return img.resize((self.width, self.height), self.interpolation)
-# -----------------------------

@@ -25,7 +25,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-def get_data(name, split_id, data_dir, height, width, batch_size, num_instances, workers, combine_trainval, tricks):
+def get_data(name, split_id, data_dir, height, width, batch_size, num_instances, workers, combine_trainval):
     root = osp.join(data_dir, name)
 
     dataset = datasets.create(name, root, split_id=split_id)
@@ -35,20 +35,11 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
     train_set = dataset.trainval if combine_trainval else dataset.train
     num_classes = (dataset.num_trainval_ids if combine_trainval else dataset.num_train_ids)
 
-    if tricks < 2:
-        train_transformer = T.Compose([
-            T.RandomSizedRectCrop(height, width),
-            T.RandomHorizontalFlip(),
-            T.ToTensor(),
-            normalizer,
-        ])
-    else:
-        train_transformer = T.Compose([
-            T.RandomSizedRectCrop(height, width),
-            T.RandomErasingAugmentation(height, width),
-            T.RandomHorizontalFlip(),
-            T.ToTensor(),
-            normalizer,
+    train_transformer = T.Compose([
+        T.RandomSizedRectCrop(height, width),
+        T.RandomHorizontalFlip(),
+        T.ToTensor(),
+        normalizer,
         ])
 
     test_transformer = T.Compose([
@@ -92,12 +83,12 @@ def main(args):
     if args.height is None or args.width is None:
         args.height, args.width = (144, 56) if args.arch == 'inception' else (256, 128)
     
-    dataset, num_classes, train_loader, val_loader, test_loader = get_data(args.dataset, args.split, args.data_dir, args.height, args.width, args.batch_size, args.num_instances, args.workers, args.combine_trainval, args.t)
+    dataset, num_classes, train_loader, val_loader, test_loader = get_data(args.dataset, args.split, args.data_dir, args.height, args.width, args.batch_size, args.num_instances, args.workers, args.combine_trainval)
 
     # Create model
     # Hacking here to let the classifier be the last feature embedding layer
     # Net structure: avgpool -> FC(1024) -> FC(args.features)
-    model = models.create(args.arch, num_features=1024, dropout=args.dropout, num_classes=args.features)
+    model = models.create(args.arch, num_features=1024, dropout=args.dropout, num_classes=num_classes)
 
     # Load from checkpoint
     start_epoch = best_top1 = 0
@@ -142,32 +133,18 @@ def main(args):
     # Trainer
     trainer = Trainer(model, criterion)
 
-    # -----------------------------
-    # Trick 1: Warmup Learning Rate
     def adjust_lr(epoch):
 
-        if args.t == 0:
-            if epoch <= 39:
-                lr = args.lr
-            elif 40 <= epoch <= 69:
-                lr = args.lr * 0.1
-            else:
-                lr = args.lr * 0.1 * 0.1
+        if epoch <= 39:
+            lr = args.lr
+        elif 40 <= epoch <= 69:
+            lr = args.lr * 0.1
         else:
-            if epoch <= 10:
-                lr = (args.lr / 10) * (epoch / 10)
-            elif 11 <= epoch <= 40:
-                lr = args.lr
-            elif 41 <= epoch <= 70:
-                lr = args.lr / 10
-            else:
-                lr = args.lr / 100
+            lr = args.lr * 0.1 * 0.1
 
-        
         for g in optimizer.param_groups:
             g['lr'] = lr * g.get('lr_mult', 1)
     
-    # -----------------------------
 
     # Start training
     for epoch in range(start_epoch + 1, args.epochs + 1):
