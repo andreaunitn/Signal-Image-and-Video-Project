@@ -1,7 +1,6 @@
 from __future__ import print_function, absolute_import
 import os.path as osp
 import argparse
-import os
 
 from torch.utils.data import DataLoader
 from torch.backends import cudnn
