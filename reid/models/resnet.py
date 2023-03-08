@@ -27,11 +27,11 @@ class ResNet(nn.Module):
         elif depth == 34:
             weights = ResNet34_Weights.IMAGENET1K_V1
         elif depth == 50:
-            weights = ResNet50_Weights.IMAGENET1K_V1
+            weights = ResNet50_Weights.IMAGENET1K_V2
         elif depth == 101:
-            weights = ResNet101_Weights.IMAGENET1K_V1
+            weights = ResNet101_Weights.IMAGENET1K_V2
         elif depth == 152:
-            weights = ResNet152_Weights.IMAGENET1K_V1
+            weights = ResNet152_Weights.IMAGENET1K_V2
 
         super(ResNet, self).__init__()
 

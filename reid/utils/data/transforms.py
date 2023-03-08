@@ -78,8 +78,6 @@ class RandomErasingAugmentation(object):
             x_e = random.randint(0, img.size[0] - W_e)
             y_e = random.randint(0, img.size[1] - H_e)
 
-            print("H_e: {}, W_e: {}, x_e: {}, y_e: {}, height: {}, width: {}".format(H_e, W_e, x_e, y_e, img.size[1], img.size[0]))
-
             # checking if the rectangle region is inside the image size
             if x_e + W_e <= img.size[0] and y_e + H_e <= img.size[1]:
 
