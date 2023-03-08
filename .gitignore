@@ -227,6 +227,6 @@ ENV/
 
 
 # Project specific
-examples/data
-examples/logs
+tricks/data
+tricks/logs
 
