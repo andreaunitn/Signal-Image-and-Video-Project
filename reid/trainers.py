@@ -8,7 +8,6 @@ from .evaluation_metrics import accuracy
 from .loss import OIMLoss, TripletLoss
 from .utils.meters import AverageMeter
 
-
 class BaseTrainer(object):
     def __init__(self, model, criterion):
         super(BaseTrainer, self).__init__()

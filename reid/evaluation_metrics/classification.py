@@ -17,3 +17,5 @@ def accuracy(output, target, topk=(1,)):
         correct_k = correct[:k].view(-1).float().sum(dim=0, keepdim=True)
         ret.append(correct_k.mul_(1. / batch_size))
     return ret
+
+
