@@ -18,8 +18,10 @@ from reid.evaluators import Evaluator
 from reid.utils.logging import Logger
 from reid.loss import TripletLoss
 from reid.trainers import Trainer
+from reid.loss import CETLoss
 from reid import datasets
 from reid import models
+
 
 import warnings
 warnings.filterwarnings("ignore")
@@ -128,13 +130,27 @@ def main(args):
         evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric)
         return
 
-    # Criterion
-    # Enabling GPU acceleration on Mac devices
-    if torch.backends.mps.is_available():
-        mps_device = torch.device("mps")
-        criterion = TripletLoss(margin=args.margin).to(mps_device)
+    # -----------------------------
+    # Trick 3: Label Smoothing
+
+    if args.t < 3:
+        # Criterion
+        # Enabling GPU acceleration on Mac devices
+        if torch.backends.mps.is_available():
+            mps_device = torch.device("mps")
+            criterion = TripletLoss(margin=args.margin).to(mps_device)
+        else:
+            criterion = TripletLoss(margin=args.margin).cuda()
     else:
-        criterion = TripletLoss(margin=args.margin).cuda()
+        # Criterion
+        # Enabling GPU acceleration on Mac devices
+        if torch.backends.mps.is_available():
+            mps_device = torch.device("mps")
+            criterion = CETLoss(margin=args.margin).to(mps_device)
+        else:
+            criterion = CETLoss(margin=args.margin).cuda()
+
+    # -----------------------------
 
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
