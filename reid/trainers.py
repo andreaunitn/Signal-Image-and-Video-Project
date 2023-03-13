@@ -74,20 +74,20 @@ class Trainer(BaseTrainer):
         return inputs, targets
 
     def _forward(self, inputs, targets):
-        outputs = self.model(*inputs)
+        features, logits = self.model(*inputs)
         if isinstance(self.criterion, torch.nn.CrossEntropyLoss):
-            loss = self.criterion(outputs, targets)
-            prec, = accuracy(outputs.data, targets.data)
+            loss = self.criterion(logits, targets)
+            prec, = accuracy(logits.data, targets.data)
             prec = prec[0]
         elif isinstance(self.criterion, OIMLoss):
-            loss, outputs = self.criterion(outputs, targets)
-            prec, = accuracy(outputs.data, targets.data)
+            loss, logits = self.criterion(logits, targets)
+            prec, = accuracy(logits.data, targets.data)
             prec = prec[0]
         elif isinstance(self.criterion, TripletLoss):
-            loss, prec = self.criterion(outputs, targets)
+            loss, prec = self.criterion(logits, targets)
         elif isinstance(self.criterion, CETLoss):
-            loss = self.criterion(outputs, targets)
-            prec, = accuracy(outputs.data, targets.data)
+            loss = self.criterion(logits, targets)
+            prec, = accuracy(logits.data, targets.data)
             prec = prec[0]
         else:
             raise ValueError("Unsupported loss:", self.criterion)

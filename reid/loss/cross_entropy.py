@@ -13,9 +13,9 @@ class CETLoss(torch.nn.Module):
         self.cross_entropy_loss = torch.nn.CrossEntropyLoss(label_smoothing = e) #TODO move to GPU
         self.triplet_loss = TripletLoss(margin=self.margin) #TODO move to GPU
 
-    def forward(self, input, target):
-        cross_entropy_loss = self.cross_entropy_loss(input, target)
-        triplet_loss, _ = self.triplet_loss(input, target)
+    def forward(self, features, logits, target):
+        cross_entropy_loss = self.cross_entropy_loss(logits, target)
+        triplet_loss, _ = self.triplet_loss(features, target)
         loss = cross_entropy_loss + self.alpha * triplet_loss
         return loss
     

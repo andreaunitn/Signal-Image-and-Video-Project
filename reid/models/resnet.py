@@ -89,6 +89,7 @@ class ResNet(nn.Module):
         if self.has_embedding:
             x = self.feat(x)
             x = self.feat_bn(x)
+            y = x.clone()
         if self.norm:
             x = F.normalize(x)
         elif self.has_embedding:
@@ -97,7 +98,7 @@ class ResNet(nn.Module):
             x = self.drop(x)
         if self.num_classes > 0:
             x = self.classifier(x)
-        return x
+        return y, x
 
     def reset_params(self):
         for m in self.modules():
