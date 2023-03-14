@@ -26,6 +26,8 @@ from reid import models
 import warnings
 warnings.filterwarnings("ignore")
 
+import runai.ga.torch
+
 
 def get_data(name, split_id, data_dir, height, width, batch_size, num_instances, workers, combine_trainval, tricks):
     root = osp.join(data_dir, name)
@@ -154,6 +156,9 @@ def main(args):
 
     # Optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+
+    # Gradient Accumulation
+    optimizer = runai.ga.torch.optim.Optimizer(optimizer)
 
     # Trainer
     trainer = Trainer(model, criterion)

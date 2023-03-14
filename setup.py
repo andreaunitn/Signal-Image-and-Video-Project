@@ -11,7 +11,7 @@ setup(name='open-reid',
       install_requires=[
           'numpy', 'scipy', 'torch', 'torchvision',
           'six', 'h5py', 'Pillow',
-          'scikit-learn', 'metric-learn'],
+          'scikit-learn', 'metric-learn', 'runai'],
       extras_require={
           'docs': ['sphinx', 'sphinx_rtd_theme'],
       },
