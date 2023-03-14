@@ -86,7 +86,7 @@ class Trainer(BaseTrainer):
         elif isinstance(self.criterion, TripletLoss):
             loss, prec = self.criterion(logits, targets)
         elif isinstance(self.criterion, CETLoss):
-            loss = self.criterion(logits, targets)
+            loss = self.criterion(features, logits, targets)
             prec, = accuracy(logits.data, targets.data)
             prec = prec[0]
         else:
