@@ -37,7 +37,8 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
     train_set = dataset.trainval if combine_trainval else dataset.train
     num_classes = (dataset.num_trainval_ids if combine_trainval else dataset.num_train_ids)
 
-    if tricks < 2:
+    # Trick 2
+    if tricks == 3:
         train_transformer = T.Compose([
             T.RandomSizedRectCrop(height, width),
             T.RandomHorizontalFlip(),
@@ -162,7 +163,7 @@ def main(args):
     # Trick 1: Warmup Learning Rate
     def adjust_lr(epoch):
 
-        if args.t == 0:
+        if args.t == 3:
             if epoch <= 39:
                 lr = args.lr
             elif 40 <= epoch <= 69:
