@@ -158,7 +158,7 @@ def main(args):
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     # Gradient Accumulation
-    optimizer = runai.ga.torch.optim.Optimizer(optimizer)
+    optimizer = runai.ga.torch.optim.Optimizer(optimizer, steps = 2)
 
     # Trainer
     trainer = Trainer(model, criterion)
