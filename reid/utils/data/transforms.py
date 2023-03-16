@@ -28,7 +28,7 @@ class RandomSizedRectCrop(object):
 
     def __call__(self, img):
 
-        doResize = False
+        doResize = True
 
         # Resize
         img = img.resize((self.width, self.height), self.interpolation)
@@ -46,9 +46,10 @@ class RandomSizedRectCrop(object):
         for _ in range(10):
 
             area = img.size[0] * img.size[1]
+
             if(doResize):
                 target_area = 128*256
-                aspect_ratio = 0.5
+                aspect_ratio = 2
             else: 
                 target_area = random.uniform(0.64, 1.0) * area
                 aspect_ratio = random.uniform(2, 3)
@@ -108,7 +109,7 @@ class RandomErasingAugmentation(object):
 
                 # adding the mean
                 img = np.asarray(img, dtype = "int32")
-                img[x_e : x_e + W_e, y_e : y_e + H_e] = mean
+                img[y_e : y_e + H_e, x_e : x_e + W_e] = mean
 
                 img = Image.fromarray(img.astype('uint8'), 'RGB')
 
