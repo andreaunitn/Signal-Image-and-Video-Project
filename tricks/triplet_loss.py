@@ -37,8 +37,8 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
     train_set = dataset.trainval if combine_trainval else dataset.train
     num_classes = (dataset.num_trainval_ids if combine_trainval else dataset.num_train_ids)
 
-    # Trick 2
-    if tricks == 3:
+    # Trick 2: Random Erasing Augmentation
+    if tricks < 2:
         train_transformer = T.Compose([
             T.RandomSizedRectCrop(height, width),
             T.RandomHorizontalFlip(),
@@ -48,7 +48,7 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
     else:
         train_transformer = T.Compose([
             T.RandomSizedRectCrop(height, width),
-            T.RandomErasingAugmentation(height, width),
+            T.RandomErasingAugmentation(height, width), 
             T.RandomHorizontalFlip(),
             T.ToTensor(),
             normalizer,
@@ -139,17 +139,17 @@ def main(args):
         # Enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
-            criterion = TripletLoss(margin=args.margin).to(mps_device)
+            criterion = CETLoss(margin=args.margin).to(mps_device)
         else:
-            criterion = TripletLoss(margin=args.margin).cuda()
+            criterion = CETLoss(margin=args.margin).cuda()
     else:
         # Criterion
         # Enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
-            criterion = CETLoss(margin=args.margin).to(mps_device)
+            criterion = CETLoss(margin=args.margin, e=0.1).to(mps_device)
         else:
-            criterion = CETLoss(margin=args.margin).cuda()
+            criterion = CETLoss(margin=args.margin, e=0.1).cuda()
 
     # -----------------------------
 
@@ -163,7 +163,7 @@ def main(args):
     # Trick 1: Warmup Learning Rate
     def adjust_lr(epoch):
 
-        if args.t == 3:
+        if args.t < 1:
             if epoch <= 39:
                 lr = args.lr
             elif 40 <= epoch <= 69:

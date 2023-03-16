@@ -65,6 +65,7 @@ class RandomSizedRectCrop(object):
 
 # -----------------------------
 # Trick 2: Random Erasing Augmentation
+
 def decision(probability):
     return random.random() < probability
 
