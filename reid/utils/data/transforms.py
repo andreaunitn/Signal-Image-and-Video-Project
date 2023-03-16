@@ -28,6 +28,8 @@ class RandomSizedRectCrop(object):
 
     def __call__(self, img):
 
+        doResize = False
+
         # Resize
         img = img.resize((self.width, self.height), self.interpolation)
 
@@ -44,8 +46,12 @@ class RandomSizedRectCrop(object):
         for _ in range(10):
 
             area = img.size[0] * img.size[1]
-            target_area = random.uniform(0.64, 1.0) * area
-            aspect_ratio = random.uniform(2, 3)
+            if(doResize):
+                target_area = 128*256
+                aspect_ratio = 0.5
+            else: 
+                target_area = random.uniform(0.64, 1.0) * area
+                aspect_ratio = random.uniform(2, 3)
 
             h = int(round(math.sqrt(target_area * aspect_ratio)))
             w = int(round(math.sqrt(target_area / aspect_ratio)))
