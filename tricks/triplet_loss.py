@@ -157,9 +157,9 @@ def main(args):
         # Enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
-            criterion = CETLoss(margin=args.margin, e=0.1).to(mps_device)
+            criterion = CETLoss(margin=args.margin).to(mps_device)
         else:
-            criterion = CETLoss(margin=args.margin, e=0.1).cuda()
+            criterion = CETLoss(margin=args.margin).cuda()
 
     # -----------------------------
 
@@ -182,7 +182,8 @@ def main(args):
                 lr = args.lr * 0.1 * 0.1
         else:
             if epoch <= 10:
-                lr = (args.lr / 10) * (epoch / 10)
+                #lr = (args.lr / 10) * (epoch / 10) fixing warmup lr
+                lr = args.lr * (epoch / 10)
             elif 11 <= epoch <= 40:
                 lr = args.lr
             elif 41 <= epoch <= 70:
