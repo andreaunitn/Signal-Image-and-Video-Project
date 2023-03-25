@@ -97,10 +97,20 @@ def main(args):
     
     dataset, num_classes, train_loader, val_loader, test_loader = get_data(args.dataset, args.split, args.data_dir, args.height, args.width, args.batch_size, args.num_instances, args.workers, args.combine_trainval, args.t)
 
+    # -----------------------------
+    # Trick 4: Last Stride
+
+    if(args.t < 4):
+        last_stride_value = 2
+    else:
+        last_stride_value = 1
+
     # Create model
     # Hacking here to let the classifier be the last feature embedding layer
     # Net structure: avgpool -> FC(1024) -> FC(args.features)
-    model = models.create(args.arch, num_features=1024, dropout=args.dropout, num_classes=num_classes)
+    model = models.create(args.arch, num_features=1024, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value)
+
+    # -----------------------------
 
     # Load from checkpoint
     start_epoch = best_top1 = 0

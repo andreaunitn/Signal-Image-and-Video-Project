@@ -20,7 +20,7 @@ class ResNet(nn.Module):
     }
 
     def __init__(self, depth, weights=None, cut_at_pooling=False,
-                 num_features=0, norm=False, dropout=0, num_classes=0):
+                 num_features=0, norm=False, dropout=0, num_classes=0, last_stride=2):
 
         if depth == 18:
             weights = ResNet18_Weights.IMAGENET1K_V1
@@ -43,6 +43,10 @@ class ResNet(nn.Module):
         if depth not in ResNet.__factory:
             raise KeyError("Unsupported depth:", depth)
         self.base = ResNet.__factory[depth](weights=weights)
+
+        if last_stride == 1:
+            self.base.layer4[0].downsample[0].stride = (1, 1)
+            self.base.layer4[0].conv2.stride = (1, 1)
 
         if not self.cut_at_pooling:
             self.num_features = num_features
