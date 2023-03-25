@@ -44,9 +44,13 @@ class ResNet(nn.Module):
             raise KeyError("Unsupported depth:", depth)
         self.base = ResNet.__factory[depth](weights=weights)
 
+        # -----------------------------
+        # Trick 4: Last Stride
+
         if last_stride == 1:
             self.base.layer4[0].downsample[0].stride = (1, 1)
             self.base.layer4[0].conv2.stride = (1, 1)
+        # -----------------------------
 
         if not self.cut_at_pooling:
             self.num_features = num_features

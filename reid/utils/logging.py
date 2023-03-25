@@ -4,14 +4,18 @@ import sys
 
 from .osutils import mkdir_if_missing
 
-
 class Logger(object):
-    def __init__(self, fpath=None):
+    def __init__(self, fpath=None, command=""):
         self.console = sys.stdout
         self.file = None
         if fpath is not None:
             mkdir_if_missing(os.path.dirname(fpath))
-            self.file = open(fpath, 'w')
+            self.file = open(fpath, 'a')
+            if self.file is not None:
+                self.file.write("# -------------------------")
+                self.file.write("\n")
+                self.file.write(command)
+                self.file.write("\n")
 
     def __del__(self):
         self.close()

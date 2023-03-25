@@ -2,6 +2,7 @@ from __future__ import print_function, absolute_import
 import os.path as osp
 import argparse
 
+import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.backends import cudnn
 from torch import nn
@@ -34,6 +35,11 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
 
     normalizer = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
+    # --------------------
+    # PROVA
+    color_jitter = transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)
+    # --------------------
+
     train_set = dataset.trainval if combine_trainval else dataset.train
     num_classes = (dataset.num_trainval_ids if combine_trainval else dataset.num_train_ids)
 
@@ -43,6 +49,7 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
             T.RandomSizedRectCrop(height, width),
             T.RandomHorizontalFlip(),
             T.ToTensor(),
+            color_jitter,
             normalizer,
         ])
     else:
@@ -84,9 +91,11 @@ def main(args):
     torch.manual_seed(args.seed)
     cudnn.benchmark = True
 
+    argv = sys.argv
+
     # Redirect print to both console and log file
     if not args.evaluate:
-        sys.stdout = Logger(osp.join(args.logs_dir, 'log.txt'))
+        sys.stdout = Logger(osp.join(args.logs_dir, 'log.txt'), "".join(argv))
 
     # Create data loaders
     assert args.num_instances > 1, "num_instances should be greater than 1"
@@ -182,7 +191,6 @@ def main(args):
                 lr = args.lr * 0.1 * 0.1
         else:
             if epoch <= 10:
-                #lr = (args.lr / 10) * (epoch / 10) fixing warmup lr
                 lr = args.lr * (epoch / 10)
             elif 11 <= epoch <= 40:
                 lr = args.lr

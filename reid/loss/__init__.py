@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 from .oim import oim, OIM, OIMLoss
 from .triplet import TripletLoss
-from .cross_entropy import CETLoss
+from .cet_loss import CETLoss
 
 __all__ = [
     'oim',
