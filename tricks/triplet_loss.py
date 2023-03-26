@@ -34,15 +34,12 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
     dataset = datasets.create(name, root, split_id=split_id)
 
     normalizer = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-
-    # --------------------
-    # PROVA
     color_jitter = transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)
-    # --------------------
 
     train_set = dataset.trainval if combine_trainval else dataset.train
     num_classes = (dataset.num_trainval_ids if combine_trainval else dataset.num_train_ids)
 
+    # -----------------------------
     # Trick 2: Random Erasing Augmentation
     if tricks < 2:
         train_transformer = T.Compose([
@@ -58,8 +55,11 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
             T.RandomErasingAugmentation(height, width), 
             T.RandomHorizontalFlip(),
             T.ToTensor(),
+            color_jitter,
             normalizer,
         ])
+    
+    # -----------------------------
 
     test_transformer = T.Compose([
         T.RectScale(height, width),
@@ -166,9 +166,9 @@ def main(args):
         # Enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
-            criterion = CETLoss(margin=args.margin).to(mps_device)
+            criterion = CETLoss(margin=args.margin, e=0.1).to(mps_device)
         else:
-            criterion = CETLoss(margin=args.margin).cuda()
+            criterion = CETLoss(margin=args.margin, e=0.1).cuda()
 
     # -----------------------------
 
@@ -249,7 +249,7 @@ if __name__ == '__main__':
     # model
     parser.add_argument('-a', '--arch', type=str, default='resnet50', choices=models.names())
     parser.add_argument('--features', type=int, default=128)
-    parser.add_argument('--dropout', type=float, default=0)
+    parser.add_argument('--dropout', type=float, default=0.5)
     
     # loss
     parser.add_argument('--margin', type=float, default=0.3, help="margin of the triplet loss, default: 0.3")
