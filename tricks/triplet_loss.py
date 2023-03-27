@@ -19,6 +19,7 @@ from reid.evaluators import Evaluator
 from reid.utils.logging import Logger
 from reid.loss import TripletLoss
 from reid.trainers import Trainer
+from reid.loss import CETLossV2
 from reid.loss import CETLoss
 from reid import datasets
 from reid import models
@@ -158,17 +159,17 @@ def main(args):
         # Enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
-            criterion = CETLoss(margin=args.margin).to(mps_device)
+            criterion = CETLossV2(num_classes, margin=args.margin).to(mps_device)
         else:
-            criterion = CETLoss(margin=args.margin).cuda()
+            criterion = CETLossV2(num_classes, margin=args.margin).cuda()
     else:
         # Criterion
         # Enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
-            criterion = CETLoss(margin=args.margin, e=0.1).to(mps_device)
+            criterion = CETLossV2(num_classes, margin=args.margin, e=0.1).to(mps_device)
         else:
-            criterion = CETLoss(margin=args.margin, e=0.1).cuda()
+            criterion = CETLossV2(num_classes, margin=args.margin, e=0.1).cuda()
 
     # -----------------------------
 
