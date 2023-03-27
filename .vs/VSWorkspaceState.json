@@ -1,0 +1,16 @@
+{
+  "ExpandedNodes": [
+    "",
+    "\\reid",
+    "\\reid\\datasets",
+    "\\reid\\evaluation_metrics",
+    "\\reid\\feature_extraction",
+    "\\reid\\loss",
+    "\\reid\\models",
+    "\\reid\\utils",
+    "\\reid\\utils\\data",
+    "\\tricks"
+  ],
+  "SelectedNode": "\\reid\\utils\\data\\transforms.py",
+  "PreviewInSolutionExplorer": false
+}

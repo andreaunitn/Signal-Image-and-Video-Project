@@ -13,7 +13,7 @@ def extract_cnn_feature(model, inputs, modules=None):
 
     with torch.no_grad():
         if modules is None:
-            _, outputs = model(inputs)
+            outputs, _ = model(inputs)
             outputs = outputs.data.cpu()
             return outputs
         # Register forward hook for each module

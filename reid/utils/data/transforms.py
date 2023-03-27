@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from torchvision.transforms import *
+from torchvision.transforms import transforms
 from PIL import Image, ImageStat
 import numpy as np
 import random
@@ -73,9 +74,6 @@ class RandomSizedRectCrop(object):
 # -----------------------------
 # Trick 2: Random Erasing Augmentation
 
-def decision(probability):
-    return random.random() < probability
-
 class RandomErasingAugmentation(object):
     def __init__(self, height, width, interpolation = Image.BILINEAR):
         self.height = height
@@ -84,11 +82,11 @@ class RandomErasingAugmentation(object):
 
     def __call__(self, img):
 
-        if decision(0.5):
+        if random.uniform(0,1) >= 0.5:
             return img
 
         while True:
-            area = img.size[0] * img.size[1]
+            area = img.size()[1] * img.size()[2]
             target_area = random.uniform(0.02, 0.4) * area
             aspect_ratio = random.uniform(0.3, 3.33)
 
@@ -96,22 +94,31 @@ class RandomErasingAugmentation(object):
             H_e = int(round(math.sqrt(target_area * aspect_ratio)))
             W_e = int(round(math.sqrt(target_area / aspect_ratio)))
 
-            # selecting random point
-            x_e = random.randint(0, W_e)
-            y_e = random.randint(0, H_e)
-
             # checking if the rectangle region is inside the image size
-            if x_e + W_e <= img.size[0] and y_e + H_e <= img.size[1]:
+            if W_e < img.size()[2] and H_e < img.size()[1]:
+
+                # selecting random point
+                x_e = random.randint(0, img.size()[1] - H_e)
+                y_e = random.randint(0, img.size()[2] - W_e)
 
                 # calculating the mean 
-                stat = ImageStat.Stat(img)
-                mean = [int(elem) for elem in stat.mean]
+                #stat = ImageStat.Stat(img)
+                #mean = [int(elem) for elem in stat.mean]
+                mean=(0.4914, 0.4822, 0.4465)
 
                 # adding the mean
-                img = np.asarray(img, dtype = "int32")
-                img[y_e : y_e + H_e, x_e : x_e + W_e] = mean
+                #img = np.asarray(img, dtype = "int32")
+                #img[y_e : y_e + H_e, x_e : x_e + W_e] = mean
 
-                img = Image.fromarray(img.astype('uint8'), 'RGB')
+                if img.size()[0] == 3:
+                    img[0, x_e:x_e + H_e, y_e:y_e + W_e] = mean[0]
+                    img[1, x_e:x_e + H_e, y_e:y_e + W_e] = mean[1]
+                    img[2, x_e:x_e + H_e, y_e:y_e + W_e] = mean[2]
+                else:
+                    img[0, x_e:x_e + H_e, y_e:y_e + W_e] = mean[0]
 
-                return img.resize((self.width, self.height), self.interpolation)
+                #img = Image.fromarray(img.astype('uint8'), 'RGB')
+                #img.resize((self.width, self.height), self.interpolation)
+
+                return img
 # -----------------------------
