@@ -1,14 +1,4 @@
 from __future__ import print_function, absolute_import
-import os.path as osp
-import argparse
-
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader
-from torch.backends import cudnn
-from torch import nn
-import numpy as np
-import torch
-import sys
 
 from reid.utils.serialization import load_checkpoint, save_checkpoint
 from reid.utils.data.sampler import RandomIdentitySampler
@@ -17,25 +7,31 @@ from reid.utils.data import transforms as T
 from reid.dist_metric import DistanceMetric
 from reid.evaluators import Evaluator
 from reid.utils.logging import Logger
-from reid.loss import TripletLoss
 from reid.trainers import Trainer
 from reid.loss import CETLossV2
-from reid.loss import CETLoss
 from reid import datasets
 from reid import models
 
+import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+from torch.backends import cudnn
+from torch import nn
+import torch
 
+import os.path as osp
+import numpy as np
+import argparse
 import warnings
-warnings.filterwarnings("ignore")
+import sys
 
-
+# Get data from the selected dataset
 def get_data(name, split_id, data_dir, height, width, batch_size, num_instances, workers, combine_trainval, tricks):
+    
     root = osp.join(data_dir, name)
+    dataset = datasets.create(name, root, split_id = split_id)
 
-    dataset = datasets.create(name, root, split_id=split_id)
-
-    normalizer = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    color_jitter = transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)
+    normalizer = T.Normalize(mean = [0.485, 0.456, 0.406], std = [0.229, 0.224, 0.225])
+    color_jitter = transforms.ColorJitter(brightness = 0.4, contrast = 0.4, saturation = 0.4, hue = 0.1)
 
     train_set = dataset.trainval if combine_trainval else dataset.train
     num_classes = (dataset.num_trainval_ids if combine_trainval else dataset.num_train_ids)
@@ -59,7 +55,6 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
             color_jitter,
             normalizer,
         ])
-    
     # -----------------------------
 
     test_transformer = T.Compose([
@@ -88,13 +83,15 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
 
 
 def main(args):
+    warnings.filterwarnings("ignore")
+
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     cudnn.benchmark = True
 
+    # Redirect print to both console and log file
     argv = sys.argv
 
-    # Redirect print to both console and log file
     if not args.evaluate:
         sys.stdout = Logger(osp.join(args.logs_dir, 'log.txt'), "".join(argv))
 
@@ -109,21 +106,18 @@ def main(args):
 
     # -----------------------------
     # Trick 4: Last Stride
-
     if(args.t < 4):
         last_stride_value = 2
     else:
         last_stride_value = 1
 
     # Create model
-    # Hacking here to let the classifier be the last feature embedding layer
-    # Net structure: avgpool -> FC(1024) -> FC(args.features)
-    model = models.create(args.arch, num_features=1024, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value)
-
+    model = models.create(args.arch, num_features = 1024, dropout = args.dropout, num_classes = num_classes, last_stride = last_stride_value)
     # -----------------------------
 
     # Load from checkpoint
     start_epoch = best_top1 = 0
+    
     if args.resume:
         checkpoint = load_checkpoint(args.resume)
         model.load_state_dict(checkpoint['state_dict'])
@@ -131,7 +125,7 @@ def main(args):
         best_top1 = checkpoint['best_top1']
         print("=> Start epoch {}  best top1 {:.1%}".format(start_epoch, best_top1))
 
-    # Enabling GPU acceleration on Mac devices
+    # Splitting input across multiple devices (if available)
     if torch.backends.mps.is_available():
         mps_device = torch.device("mps")
         model = nn.DataParallel(model).to(mps_device)
@@ -139,12 +133,14 @@ def main(args):
         model = nn.DataParallel(model).cuda()
 
     # Distance metric
-    metric = DistanceMetric(algorithm=args.dist_metric)
+    metric = DistanceMetric(algorithm = args.dist_metric)
 
     # Evaluator
     evaluator = Evaluator(model)
+
     if args.evaluate:
         metric.train(model, train_loader)
+
         print("Validation:")
         evaluator.evaluate(val_loader, dataset.val, dataset.val, metric)
         print("Test:")
@@ -153,28 +149,24 @@ def main(args):
 
     # -----------------------------
     # Trick 3: Label Smoothing
-
     if args.t < 3:
         # Criterion
-        # Enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
-            criterion = CETLossV2(num_classes, margin=args.margin).to(mps_device)
+            criterion = CETLossV2(num_classes, margin = args.margin).to(mps_device)
         else:
-            criterion = CETLossV2(num_classes, margin=args.margin).cuda()
+            criterion = CETLossV2(num_classes, margin = args.margin).cuda()
     else:
         # Criterion
-        # Enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
-            criterion = CETLossV2(num_classes, margin=args.margin, e=0.1).to(mps_device)
+            criterion = CETLossV2(num_classes, margin = args.margin, e = 0.1).to(mps_device)
         else:
-            criterion = CETLossV2(num_classes, margin=args.margin, e=0.1).cuda()
-
+            criterion = CETLossV2(num_classes, margin = args.margin, e = 0.1).cuda()
     # -----------------------------
 
     # Optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    optimizer = torch.optim.Adam(model.parameters(), lr = args.lr, weight_decay = args.weight_decay)
 
     # Trainer
     trainer = Trainer(model, criterion)
@@ -192,18 +184,16 @@ def main(args):
                 lr = args.lr * 0.1 * 0.1
         else:
             if epoch <= 10:
-                lr = args.lr * (epoch / 10)
+                lr = args.lr * (epoch * 0.1)
             elif 11 <= epoch <= 40:
                 lr = args.lr
             elif 41 <= epoch <= 70:
-                lr = args.lr / 10
+                lr = args.lr * 0.1
             else:
-                lr = args.lr / 100
+                lr = args.lr * 0.1 * 0.1
 
-        
         for g in optimizer.param_groups:
             g['lr'] = lr * g.get('lr_mult', 1)
-    
     # -----------------------------
 
     # Start training
@@ -218,11 +208,12 @@ def main(args):
 
         is_best = top1 > best_top1
         best_top1 = max(top1, best_top1)
+
         save_checkpoint({
             'state_dict': model.module.state_dict(),
             'epoch': epoch + 1,
             'best_top1': best_top1,
-        }, is_best, fpath=osp.join(args.logs_dir, 'checkpoint.pth.tar'))
+        }, is_best, fpath = osp.join(args.logs_dir, 'checkpoint.pth.tar'))
 
         print('\n * Finished epoch {:3d}  top1: {:5.1%}  best: {:5.1%}{}\n'.format(epoch, top1, best_top1, ' *' if is_best else ''))
 
@@ -233,50 +224,48 @@ def main(args):
     metric.train(model, train_loader)
     evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric)
 
-
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Triplet loss classification")
+    parser = argparse.ArgumentParser(description = "Triplet loss classification")
     
-    # data
-    parser.add_argument('-d', '--dataset', type=str, default='market1501', choices=datasets.names())
-    parser.add_argument('-b', '--batch-size', type=int, default=64)
-    parser.add_argument('-j', '--workers', type=int, default=4)
-    parser.add_argument('--split', type=int, default=0)
-    parser.add_argument('--height', type=int, help="input height, default: 256 for resnet*, 144 for inception")
-    parser.add_argument('--width', type=int, help="input width, default: 128 for resnet*, 56 for inception")
-    parser.add_argument('--combine-trainval', action='store_true', help="train and val sets together for training, val set alone for validation")
-    parser.add_argument('--num-instances', type=int, default=4, help="each minibatch consist of (batch_size // num_instances) identities, and each identity has num_instances instances, default: 4")
+    # Data
+    parser.add_argument('-d', '--dataset', type = str, default = 'market1501', choices = datasets.names())
+    parser.add_argument('-b', '--batch-size', type = int, default = 64)
+    parser.add_argument('-j', '--workers', type = int, default = 4)
+    parser.add_argument('--split', type = int, default = 0)
+    parser.add_argument('--height', type = int, help = "input height, default: 256 for resnet*, 144 for inception")
+    parser.add_argument('--width', type = int, help = "input width, default: 128 for resnet*, 56 for inception")
+    parser.add_argument('--combine-trainval', action = 'store_true', help = "train and val sets together for training, val set alone for validation")
+    parser.add_argument('--num-instances', type = int, default = 4, help = "each minibatch consist of (batch_size // num_instances) identities, and each identity has num_instances instances, default: 4")
     
-    # model
-    parser.add_argument('-a', '--arch', type=str, default='resnet50', choices=models.names())
-    parser.add_argument('--features', type=int, default=128)
-    parser.add_argument('--dropout', type=float, default=0.5)
+    # Model
+    parser.add_argument('-a', '--arch', type = str, default = 'resnet50', choices = models.names())
+    parser.add_argument('--features', type = int, default = 128)
+    parser.add_argument('--dropout', type = float, default = 0)
     
-    # loss
-    parser.add_argument('--margin', type=float, default=0.3, help="margin of the triplet loss, default: 0.3")
+    # Loss
+    parser.add_argument('--margin', type = float, default = 0.3, help = "margin of the triplet loss, default: 0.3")
     
-    # optimizer
-    parser.add_argument('--lr', type=float, default=0.00035, help="learning rate of all parameters")
+    # Optimizer
+    parser.add_argument('--lr', type = float, default = 0.00035, help = "learning rate of all parameters")
+    parser.add_argument('--weight-decay', type = float, default = 5e-4)
     
-    parser.add_argument('--weight-decay', type=float, default=5e-4)
+    # Training configs
+    parser.add_argument('--resume', type = str, default = '', metavar = 'PATH')
+    parser.add_argument('--evaluate', action = 'store_true', help = "evaluation only")
+    parser.add_argument('--epochs', type = int, default = 120)
+    parser.add_argument('--start_save', type = int, default = 0, help = "start saving checkpoints after specific epoch")
+    parser.add_argument('--seed', type = int, default = 1)
+    parser.add_argument('--print-freq', type = int, default = 1)
     
-    # training configs
-    parser.add_argument('--resume', type=str, default='', metavar='PATH')
-    parser.add_argument('--evaluate', action='store_true', help="evaluation only")
-    parser.add_argument('--epochs', type=int, default=120)
-    parser.add_argument('--start_save', type=int, default=0, help="start saving checkpoints after specific epoch")
-    parser.add_argument('--seed', type=int, default=1)
-    parser.add_argument('--print-freq', type=int, default=1)
+    # Metric learning
+    parser.add_argument('--dist-metric', type = str, default = 'euclidean', choices = ['euclidean', 'kissme'])
     
-    # metric learning
-    parser.add_argument('--dist-metric', type=str, default='euclidean', choices=['euclidean', 'kissme'])
-    
-    # misc
+    # Misc
     working_dir = osp.dirname(osp.abspath(__file__))
-    parser.add_argument('--data-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'data'))
-    parser.add_argument('--logs-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'logs'))
+    parser.add_argument('--data-dir', type = str, metavar = 'PATH', default = osp.join(working_dir, 'data'))
+    parser.add_argument('--logs-dir', type = str, metavar = 'PATH', default = osp.join(working_dir, 'logs'))
 
-    # trick number
-    parser.add_argument('-t', type = int, default=0)
+    # Trick number
+    parser.add_argument('-t', type = int, default = 0)
    
     main(parser.parse_args())
