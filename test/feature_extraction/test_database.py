@@ -1,9 +1,6 @@
-from unittest import TestCase
-
-import numpy as np
-
 from reid.feature_extraction.database import FeatureDatabase
-
+from unittest import TestCase
+import numpy as np
 
 class TestFeatureDatabase(TestCase):
     def test_all(self):
@@ -11,6 +8,7 @@ class TestFeatureDatabase(TestCase):
             db['img1'] = np.random.rand(3, 8, 8).astype(np.float32)
             db['img2'] = np.arange(10)
             db['img2'] = np.arange(10).reshape(2, 5).astype(np.float32)
+            
         with FeatureDatabase('/tmp/open-reid/test.h5', 'r') as db:
             self.assertTrue('img1' in db)
             self.assertTrue('img2' in db)

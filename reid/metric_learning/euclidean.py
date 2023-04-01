@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
-import numpy as np
 from metric_learn.base_metric import BaseMetricLearner
+import numpy as np
 
 class Euclidean(BaseMetricLearner):
     def __init__(self):
@@ -14,7 +14,8 @@ class Euclidean(BaseMetricLearner):
         self.M_ = np.eye(X.shape[1])
         self.X_ = X
 
-    def transform(self, X=None):
+    def transform(self, X = None):
         if X is None:
             return self.X_
+        
         return X

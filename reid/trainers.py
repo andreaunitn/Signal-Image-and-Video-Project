@@ -1,12 +1,12 @@
 from __future__ import print_function, absolute_import
 import time
 
-import torch
-from torch.autograd import Variable
-
+from .loss import TripletLoss, CETLoss, CETLossV2
 from .evaluation_metrics import accuracy
-from .loss import OIMLoss, TripletLoss, CETLoss, CETLossV2
 from .utils.meters import AverageMeter
+
+from torch.autograd import Variable
+import torch
 
 class BaseTrainer(object):
     def __init__(self, model, criterion):
@@ -14,7 +14,7 @@ class BaseTrainer(object):
         self.model = model
         self.criterion = criterion
 
-    def train(self, epoch, data_loader, optimizer, print_freq=1):
+    def train(self, epoch, data_loader, optimizer, print_freq = 1):
         self.model.train()
 
         batch_time = AverageMeter()
@@ -23,6 +23,7 @@ class BaseTrainer(object):
         precisions = AverageMeter()
 
         end = time.time()
+
         for i, inputs in enumerate(data_loader):
             data_time.update(time.time() - end)
 
@@ -40,16 +41,7 @@ class BaseTrainer(object):
             end = time.time()
 
             if (i + 1) % print_freq == 0:
-                print('Epoch: [{}][{}/{}]\t'
-                      'Time {:.3f} ({:.3f})\t'
-                      'Data {:.3f} ({:.3f})\t'
-                      'Loss {:.3f} ({:.3f})\t'
-                      'Prec {:.2%} ({:.2%})\t'
-                      .format(epoch, i + 1, len(data_loader),
-                              batch_time.val, batch_time.avg,
-                              data_time.val, data_time.avg,
-                              losses.val, losses.avg,
-                              precisions.val, precisions.avg))
+                print('Epoch: [{}][{}/{}]\t Time {:.3f} ({:.3f})\t Data {:.3f} ({:.3f})\t Loss {:.3f} ({:.3f})\t Prec {:.2%} ({:.2%})\t'.format(epoch, i + 1, len(data_loader), batch_time.val, batch_time.avg, data_time.val, data_time.avg, losses.val, losses.avg, precisions.val, precisions.avg))
 
     def _parse_data(self, inputs):
         raise NotImplementedError
@@ -57,14 +49,12 @@ class BaseTrainer(object):
     def _forward(self, inputs, targets):
         raise NotImplementedError
 
-
 class Trainer(BaseTrainer):
     def _parse_data(self, inputs):
 
         imgs, _, pids, _ = inputs
         inputs = [Variable(imgs)]
 
-        # enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
             targets = Variable(pids.to(mps_device))
@@ -77,10 +67,6 @@ class Trainer(BaseTrainer):
         features, logits = self.model(*inputs)
         if isinstance(self.criterion, torch.nn.CrossEntropyLoss):
             loss = self.criterion(logits, targets)
-            prec, = accuracy(logits.data, targets.data)
-            prec = prec[0]
-        elif isinstance(self.criterion, OIMLoss):
-            loss, logits = self.criterion(logits, targets)
             prec, = accuracy(logits.data, targets.data)
             prec = prec[0]
         elif isinstance(self.criterion, TripletLoss):

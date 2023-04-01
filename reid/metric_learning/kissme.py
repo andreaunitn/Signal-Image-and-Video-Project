@@ -1,8 +1,7 @@
 from __future__ import absolute_import
 
-import numpy as np
 from metric_learn.base_metric import BaseMetricLearner
-
+import numpy as np
 
 def validate_cov_matrix(M):
     M = (M + M.T) * 0.5
@@ -16,10 +15,12 @@ def validate_cov_matrix(M):
             # Find the nearest positive definite matrix for M. Modified from
             # http://www.mathworks.com/matlabcentral/fileexchange/42885-nearestspd
             # Might take several minutes
+
             k += 1
             w, v = np.linalg.eig(M)
             min_eig = v.min()
             M += (-min_eig * k * k + np.spacing(min_eig)) * I
+    
     return M
 
 
@@ -30,10 +31,12 @@ class KISSME(BaseMetricLearner):
     def metric(self):
         return self.M_
 
-    def fit(self, X, y=None):
+    def fit(self, X, y = None):
         n = X.shape[0]
+
         if y is None:
             y = np.arange(n)
+            
         X1, X2 = np.meshgrid(np.arange(n), np.arange(n))
         X1, X2 = X1[X1 < X2], X2[X1 < X2]
         matches = (y[X1] == y[X2])
@@ -43,7 +46,7 @@ class KISSME(BaseMetricLearner):
         idxb = X2[matches]
         S = X[idxa] - X[idxb]
         C1 = S.transpose().dot(S) / num_matches
-        p = np.random.choice(num_non_matches, num_matches, replace=False)
+        p = np.random.choice(num_non_matches, num_matches, replace = False)
         idxa = X1[~matches]
         idxb = X2[~matches]
         idxa = idxa[p]

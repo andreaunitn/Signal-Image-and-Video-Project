@@ -1,6 +1,5 @@
 from __future__ import absolute_import
 
-
 class AverageMeter(object):
     """Computes and stores the average and current value"""
 
@@ -16,7 +15,7 @@ class AverageMeter(object):
         self.sum = 0
         self.count = 0
 
-    def update(self, val, n=1):
+    def update(self, val, n = 1):
         self.val = val
         self.sum += val * n
         self.count += n

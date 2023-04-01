@@ -1,16 +1,18 @@
 from __future__ import absolute_import
+
+from .osutils import mkdir_if_missing
 import os
 import sys
 
-from .osutils import mkdir_if_missing
-
 class Logger(object):
-    def __init__(self, fpath=None, command=""):
+    def __init__(self, fpath = None, command = ""):
         self.console = sys.stdout
         self.file = None
+
         if fpath is not None:
             mkdir_if_missing(os.path.dirname(fpath))
             self.file = open(fpath, 'a')
+
             if self.file is not None:
                 self.file.write("# -------------------------")
                 self.file.write("\n")
@@ -28,16 +30,19 @@ class Logger(object):
 
     def write(self, msg):
         self.console.write(msg)
+
         if self.file is not None:
             self.file.write(msg)
 
     def flush(self):
         self.console.flush()
+
         if self.file is not None:
             self.file.flush()
             os.fsync(self.file.fileno())
 
     def close(self):
         self.console.close()
+
         if self.file is not None:
             self.file.close()

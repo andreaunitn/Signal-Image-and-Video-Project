@@ -1,14 +1,13 @@
 from unittest import TestCase
 
-
 class TestCUHK03(TestCase):
     def test_init(self):
-        import os.path as osp
-        from reid.datasets.cuhk03 import CUHK03
         from reid.utils.serialization import read_json
+        from reid.datasets.cuhk03 import CUHK03
+        import os.path as osp
 
         root, split_id, num_val = '/tmp/open-reid/cuhk03', 0, 100
-        dataset = CUHK03(root, split_id=split_id, num_val=num_val, download=True)
+        dataset = CUHK03(root, split_id = split_id, num_val = num_val, download = True)
 
         self.assertTrue(osp.isfile(osp.join(root, 'meta.json')))
         self.assertTrue(osp.isfile(osp.join(root, 'splits.json')))

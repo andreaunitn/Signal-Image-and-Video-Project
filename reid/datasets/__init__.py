@@ -1,12 +1,11 @@
 from __future__ import absolute_import
 import warnings
 
+from .market1501 import Market1501
+from .dukemtmc import DukeMTMC
 from .cuhk01 import CUHK01
 from .cuhk03 import CUHK03
-from .dukemtmc import DukeMTMC
-from .market1501 import Market1501
 from .viper import VIPeR
-
 
 __factory = {
     'viper': VIPeR,
@@ -16,10 +15,8 @@ __factory = {
     'dukemtmc': DukeMTMC,
 }
 
-
 def names():
     return sorted(__factory.keys())
-
 
 def create(name, root, *args, **kwargs):
     """
@@ -40,10 +37,11 @@ def create(name, root, *args, **kwargs):
     download : bool, optional
         If True, will download the dataset. Default: False
     """
+
     if name not in __factory:
         raise KeyError("Unknown dataset:", name)
+    
     return __factory[name](root, *args, **kwargs)
-
 
 def get_dataset(name, root, *args, **kwargs):
     warnings.warn("get_dataset is deprecated. Use create instead.")

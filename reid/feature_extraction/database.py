@@ -1,9 +1,8 @@
 from __future__ import absolute_import
 
-import h5py
-import numpy as np
 from torch.utils.data import Dataset
-
+import numpy as np
+import h5py
 
 class FeatureDatabase(Dataset):
     def __init__(self, *args, **kwargs):
@@ -19,6 +18,7 @@ class FeatureDatabase(Dataset):
     def __getitem__(self, keys):
         if isinstance(keys, (tuple, list)):
             return [self._get_single_item(k) for k in keys]
+        
         return self._get_single_item(keys)
 
     def _get_single_item(self, key):
@@ -26,8 +26,7 @@ class FeatureDatabase(Dataset):
 
     def __setitem__(self, key, value):
         if key in self.fid:
-            if self.fid[key].shape == value.shape and \
-               self.fid[key].dtype == value.dtype:
+            if self.fid[key].shape == value.shape and self.fid[key].dtype == value.dtype:
                 self.fid[key][...] = value
             else:
                 del self.fid[key]

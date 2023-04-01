@@ -6,9 +6,8 @@ import numpy as np
 import random
 import math
 
-
 class RectScale(object):
-    def __init__(self, height, width, interpolation=Image.BILINEAR):
+    def __init__(self, height, width, interpolation = Image.BILINEAR):
         self.height = height
         self.width = width
         self.interpolation = interpolation
@@ -19,15 +18,13 @@ class RectScale(object):
             return img
         return img.resize((self.width, self.height), self.interpolation)
 
-
 class RandomSizedRectCrop(object):
-    def __init__(self, height, width, interpolation=Image.BILINEAR):
+    def __init__(self, height, width, interpolation = Image.BILINEAR):
         self.height = height
         self.width = width
         self.interpolation = interpolation
 
     def __call__(self, img):
-
         doResize = True
 
         # Resize
@@ -48,7 +45,7 @@ class RandomSizedRectCrop(object):
             area = img.size[0] * img.size[1]
 
             if(doResize):
-                target_area = 128*256
+                target_area = 128 * 256
                 aspect_ratio = 2
             else: 
                 target_area = random.uniform(0.64, 1.0) * area
@@ -72,7 +69,6 @@ class RandomSizedRectCrop(object):
 
 # -----------------------------
 # Trick 2: Random Erasing Augmentation
-
 def decision(probability):
     return random.random() < probability
 
@@ -92,22 +88,22 @@ class RandomErasingAugmentation(object):
             target_area = random.uniform(0.02, 0.4) * area
             aspect_ratio = random.uniform(0.3, 3.33)
 
-            # calculating height and width of the rectagle region to erase
+            # Calculating height and width of the rectagle region to erase
             H_e = int(round(math.sqrt(target_area * aspect_ratio)))
             W_e = int(round(math.sqrt(target_area / aspect_ratio)))
 
-            # selecting random point
+            # Selecting random point
             x_e = random.randint(0, W_e)
             y_e = random.randint(0, H_e)
 
-            # checking if the rectangle region is inside the image size
+            # Checking if the rectangle region is inside the image size
             if x_e + W_e <= img.size[0] and y_e + H_e <= img.size[1]:
 
-                # calculating the mean 
+                # Calculating the mean 
                 stat = ImageStat.Stat(img)
                 mean = [int(elem) for elem in stat.mean]
 
-                # adding the mean
+                # Adding the mean
                 img = np.asarray(img, dtype = "int32")
                 img[y_e : y_e + H_e, x_e : x_e + W_e] = mean
 
