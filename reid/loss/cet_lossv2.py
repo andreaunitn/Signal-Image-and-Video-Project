@@ -32,7 +32,7 @@ class CETLossV2(torch.nn.Module):
         if self.epsilon == 0:
             self.cross_entropy = CrossEntropyLoss()
         else:
-            self.cross_entropy = IDLoss(num_classes=self.num_classes, epsilon=self.epsilon)
+        self.cross_entropy = IDLoss(num_classes=self.num_classes, epsilon=self.epsilon)
             
         self.triplet = TripletLoss(margin=self.margin)
 
