@@ -64,20 +64,34 @@ class ResNet(nn.Module):
             # Append new layers
             if self.has_embedding:
                 self.feat = nn.Linear(out_planes, self.num_features)
-                self.feat_bn = nn.BatchNorm1d(self.num_features)
+                if(self.norm): # Trick 5: BNNeck
+                    self.feat_bn = nn.BatchNorm1d(self.num_features)
+                    init.constant_(self.feat_bn.weight, 1)
+                    init.constant_(self.feat_bn.bias, 0)
                 init.kaiming_normal_(self.feat.weight, mode='fan_out')
                 init.constant_(self.feat.bias, 0)
-                init.constant_(self.feat_bn.weight, 1)
-                init.constant_(self.feat_bn.bias, 0)
             else:
                 # Change the num_features to CNN output channels
                 self.num_features = out_planes
             if self.dropout > 0:
                 self.drop = nn.Dropout(self.dropout)
             if self.num_classes > 0:
-                self.classifier = nn.Linear(self.num_features, self.num_classes)
-                init.normal_(self.classifier.weight, std=0.001)
-                init.constant_(self.classifier.bias, 0)
+
+                # -----------------------------
+                # Trick 5: BNNeck
+                
+                if(self.norm):
+                    
+                    self.classifier = nn.Linear(self.num_features, self.num_classes, bias=False)
+                    init.kaiming_normal_(self.classifier.weight, mode='fan_out')
+                    
+                # -----------------------------
+
+                else:
+                    
+                    self.classifier = nn.Linear(self.num_features, self.num_classes)
+                    init.normal_(self.classifier.weight, std=0.001)
+                    init.constant_(self.classifier.bias, 0)
 
         if self.weights is None:
             self.reset_params()
@@ -96,10 +110,9 @@ class ResNet(nn.Module):
 
         if self.has_embedding:
             x = self.feat(x)
-            x = self.feat_bn(x)
             y = x.clone()
         if self.norm:
-            x = F.normalize(x)
+            x = self.feat_bn(x)
         elif self.has_embedding:
             x = F.relu(x)
         if self.dropout > 0:
