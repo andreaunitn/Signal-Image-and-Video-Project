@@ -101,14 +101,7 @@ class RandomErasingAugmentation(object):
                 x_e = random.randint(0, img.size()[1] - H_e)
                 y_e = random.randint(0, img.size()[2] - W_e)
 
-                # calculating the mean 
-                #stat = ImageStat.Stat(img)
-                #mean = [int(elem) for elem in stat.mean]
                 mean=(0.4914, 0.4822, 0.4465)
-
-                # adding the mean
-                #img = np.asarray(img, dtype = "int32")
-                #img[y_e : y_e + H_e, x_e : x_e + W_e] = mean
 
                 if img.size()[0] == 3:
                     img[0, x_e:x_e + H_e, y_e:y_e + W_e] = mean[0]
@@ -116,9 +109,6 @@ class RandomErasingAugmentation(object):
                     img[2, x_e:x_e + H_e, y_e:y_e + W_e] = mean[2]
                 else:
                     img[0, x_e:x_e + H_e, y_e:y_e + W_e] = mean[0]
-
-                #img = Image.fromarray(img.astype('uint8'), 'RGB')
-                #img.resize((self.width, self.height), self.interpolation)
 
                 return img
 # -----------------------------

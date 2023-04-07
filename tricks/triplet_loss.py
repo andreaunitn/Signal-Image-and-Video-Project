@@ -35,7 +35,6 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
     dataset = datasets.create(name, root, split_id=split_id)
 
     normalizer = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    color_jitter = transforms.ColorJitter(brightness=0.4, contrast=0.4, saturation=0.4, hue=0.1)
 
     train_set = dataset.trainval if combine_trainval else dataset.train
     num_classes = (dataset.num_trainval_ids if combine_trainval else dataset.num_train_ids)
@@ -47,7 +46,6 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
             T.RandomSizedRectCrop(height, width),
             T.RandomHorizontalFlip(),
             T.ToTensor(),
-            color_jitter,
             normalizer,
         ])
     else:
@@ -55,7 +53,6 @@ def get_data(name, split_id, data_dir, height, width, batch_size, num_instances,
             T.RandomSizedRectCrop(height, width), 
             T.RandomHorizontalFlip(),
             T.ToTensor(),
-            color_jitter,
             normalizer,
             T.RandomErasingAugmentation(height, width),
         ])
