@@ -87,7 +87,7 @@ class RandomErasingAugmentation(object):
 
         while True:
             area = img.size()[1] * img.size()[2]
-            target_area = random.uniform(0.02, 0.4) * area
+            target_area = random.uniform(0.02, 0.1) * area 
             aspect_ratio = random.uniform(0.3, 3.33)
 
             # calculating height and width of the rectagle region to erase
@@ -109,6 +109,6 @@ class RandomErasingAugmentation(object):
                     img[2, x_e:x_e + H_e, y_e:y_e + W_e] = mean[2]
                 else:
                     img[0, x_e:x_e + H_e, y_e:y_e + W_e] = mean[0]
-
+               
                 return img
 # -----------------------------
