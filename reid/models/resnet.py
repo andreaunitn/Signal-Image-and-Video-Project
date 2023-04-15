@@ -64,12 +64,11 @@ class ResNet(nn.Module):
             # Append new layers
             if self.has_embedding:
                 self.feat = nn.Linear(out_planes, self.num_features)
-                if(self.norm): # Trick 5: BNNeck
-                    self.feat_bn = nn.BatchNorm1d(self.num_features)
-                    init.constant_(self.feat_bn.weight, 1)
-                    init.constant_(self.feat_bn.bias, 0)
+                self.feat_bn = nn.BatchNorm1d(self.num_features)
                 init.kaiming_normal_(self.feat.weight, mode='fan_out')
                 init.constant_(self.feat.bias, 0)
+                init.constant_(self.feat_bn.weight, 1)
+                init.constant_(self.feat_bn.bias, 0)
             else:
                 # Change the num_features to CNN output channels
                 self.num_features = out_planes
@@ -111,9 +110,7 @@ class ResNet(nn.Module):
         if self.has_embedding:
             x = self.feat(x)
             y = x.clone()
-        if self.norm:
             x = self.feat_bn(x)
-        elif self.has_embedding:
             x = F.relu(x)
         if self.dropout > 0:
             x = self.drop(x)
