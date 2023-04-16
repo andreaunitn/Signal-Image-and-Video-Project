@@ -230,3 +230,4 @@ ENV/
 tricks/data
 tricks/logs
 examples/*
+app/yolo/*
