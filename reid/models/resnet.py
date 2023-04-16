@@ -72,8 +72,10 @@ class ResNet(nn.Module):
             else:
                 # Change the num_features to CNN output channels
                 self.num_features = out_planes
+
             if self.dropout > 0:
                 self.drop = nn.Dropout(self.dropout)
+
             if self.num_classes > 0:
                 self.classifier = nn.Linear(self.num_features, self.num_classes)
                 init.normal_(self.classifier.weight, std=0.001)
@@ -91,19 +93,22 @@ class ResNet(nn.Module):
         if self.cut_at_pooling:
             return x
 
-        x = F.avg_pool2d(x, x.size()[2:])
+        x = F.adaptive_avg_pool2d(x, (1, 1))
         x = x.view(x.size(0), -1)
 
         if self.has_embedding:
             x = self.feat(x)
             x = self.feat_bn(x)
             y = x.clone()
+
         if self.norm:
             x = F.normalize(x)
         elif self.has_embedding:
             x = F.relu(x)
+
         if self.dropout > 0:
             x = self.drop(x)
+
         if self.num_classes > 0:
             x = self.classifier(x)
         return y, x
