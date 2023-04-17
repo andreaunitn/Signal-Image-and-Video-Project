@@ -231,3 +231,5 @@ tricks/data
 tricks/logs
 examples/*
 app/yolo/*
+*.tar
+*.jpg
