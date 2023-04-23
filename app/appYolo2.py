@@ -26,13 +26,14 @@ def load_checkpoint(fpath):
 # Opencv and Yolo
 # ---------------------------------------------------------
 # Parameters
-frame_counter = 0 # Frame counter
+is_first_frame = True # First frame
 dataset_features = [] # List af all saved images features
 feature_to_id = {} # Dictionary from feature tensor to id of relative person
 new_ids = 0 # Number of new identies
 tot_ids = 0 # Total number of identities
 threshold = 0.75 # Threshold
-detect = False # Check if at least one people has been detected
+detect = False # At least one people has been detected
+detect_counter = 0 # Number of frames for new ids
 
 # Image transformations
 height = 256
@@ -45,7 +46,7 @@ test_transformer = T.Compose([
 ])
 
 # Load the YOLOv3 model and configuration files
-net = cv2.dnn.readNetFromDarknet('yolo/yolov3.cfg', 'yolo/yolov3.weights')
+net = cv2.dnn.readNetFromDarknet('yolo/yolov7-tiny.cfg', 'yolo/yolov7-tiny.weights')
 
 # Load the COCO class labels
 classes = []
@@ -138,7 +139,7 @@ class MainWindow(QMainWindow):
         # -------------------
 
     def update_image(self):
-        global frame_counter, dataset_features, model, new_ids, tot_ids, detect
+        global is_first_frame, dataset_features, model, new_ids, tot_ids, detect, detect_counter
 
         # Read the next frame from the video stream
         ret, frame = cap.read()
@@ -205,7 +206,6 @@ class MainWindow(QMainWindow):
 
                 if w > 0 and h > 0:
                     crop_img = frame[y:y+h, x:x+w]
-                    file_name = f"{label}_{frame_counter}.jpg"
                     image_tensor = crop_img[:, :, ::-1]
                     image_tensor = Image.fromarray(image_tensor.astype('uint8'), 'RGB')
                     image_tensor = test_transformer(image_tensor)
@@ -216,8 +216,9 @@ class MainWindow(QMainWindow):
                     id_in_frame = 0
 
                     # First frame
-                    if frame_counter == 0:
+                    if is_first_frame:
                         file_name = f"{label}_{new_ids}.jpg"
+                        detect = True
                         new_ids += 1
 
                     else:
@@ -244,6 +245,7 @@ class MainWindow(QMainWindow):
                             closest_img = cv2.imread(f"{label}_{id_in_frame}.jpg")
                             cv2.imshow('most_similar_image', closest_img)
                             file_name = f"{label}_{id_in_frame}.jpg"
+                            detect = False
 
                     dataset_features += query_features
 
@@ -252,7 +254,7 @@ class MainWindow(QMainWindow):
                     if not osp.isfile(file_name):
                         cv2.imwrite(file_name, crop_img)
 
-                    frame_counter += 1
+                    is_first_frame = False
         else:
             tot_ids = 0
             detect = False
@@ -263,13 +265,18 @@ class MainWindow(QMainWindow):
         self.n_people.setStyleSheet("color: black; font-weight: bold; font-size: 20px;")
 
         if detect:
-            self.new_people.setText("New people detected!")
-            self.new_people.setAlignment(Qt.AlignmentFlag.AlignLeft)
-            self.new_people.setStyleSheet("color: red; font-weight: bold; font-size: 20px;")
+            detect_counter = 15
+
+        if detect_counter > 0:
+                self.new_people.setText("New people detected!")
+                self.new_people.setAlignment(Qt.AlignmentFlag.AlignLeft)
+                self.new_people.setStyleSheet("color: red; font-weight: bold; font-size: 20px;")
         else:
             self.new_people.setText("No new person identified")
             self.new_people.setAlignment(Qt.AlignmentFlag.AlignLeft)
             self.new_people.setStyleSheet("color: black; font-weight: bold; font-size: 20px;")
+
+        detect_counter -= 1
 
         # Resize the frame to match the size of the label
         frame_copy = cv2.resize(frame_copy, (self.image_label.width() - 450, self.image_label.height()))
@@ -301,3 +308,4 @@ if __name__ == "__main__":
     # Release the video stream and close all windows
     cap.release()
     cv2.destroyAllWindows()
+    
