@@ -45,8 +45,10 @@ test_transformer = T.Compose([
     normalizer,
 ])
 
-# Load the YOLOv3 model and configuration files
+# Load the YOLOv7-tiny model and configuration files
 net = cv2.dnn.readNetFromDarknet('yolo/yolov7-tiny.cfg', 'yolo/yolov7-tiny.weights')
+net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
 
 # Load the COCO class labels
 classes = []
@@ -69,6 +71,7 @@ if torch.backends.mps.is_available():
     model = model.to('mps')
 else:
     model = model.cuda()
+
 # ---------------------------------------------------------
 
 class MainWindow(QMainWindow):
@@ -211,7 +214,10 @@ class MainWindow(QMainWindow):
                     image_tensor = test_transformer(image_tensor)
 
                     # Use the model to extract people's features
-                    query_features = extract_cnn_feature(model, image_tensor.unsqueeze(0))
+                    if torch.backends.mps.is_available():
+                        query_features = extract_cnn_feature(model, image_tensor.unsqueeze(0))
+                    else:
+                        query_features = extract_cnn_feature(model, image_tensor.unsqueeze(0).cuda())
 
                     id_in_frame = 0
 
