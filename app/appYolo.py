@@ -1,7 +1,5 @@
 from reid.feature_extraction.cnn import extract_cnn_feature
-from reid.dist_metric import DistanceMetric
 from reid.utils.data import transforms as T
-from reid.evaluators import Evaluator
 from reid import models
 from PIL import Image
 import os.path as osp
@@ -32,8 +30,8 @@ def load_checkpoint(fpath):
         raise ValueError("=> No checkpoint found at '{}'".format(fpath))
 
 # Load the YOLOv3 model and configuration files
-#net = cv2.dnn.readNetFromDarknet('yolo/yolov3.cfg', 'yolo/yolov3.weights')
-net = cv2.dnn.readNetFromDarknet('yolo/yolov3-tiny.cfg', 'yolo/yolov3-tiny.weights')
+net = cv2.dnn.readNetFromDarknet('yolo/yolov3.cfg', 'yolo/yolov3.weights')
+#net = cv2.dnn.readNetFromDarknet('yolo/yolov3-tiny.cfg', 'yolo/yolov3-tiny.weights')
 
 # Load the COCO class labels
 classes = []
@@ -54,12 +52,6 @@ counter = 0
 model = models.create("resnet50", num_features=1024, dropout=0, num_classes=751, last_stride=1)
 checkpoint = load_checkpoint("model_best.pth.tar")
 model.load_state_dict(checkpoint['state_dict'])
-
-# Initializing evaluation metric
-metric = DistanceMetric(algorithm="euclidean")
-
-# Initializing evaluator
-evaluator = Evaluator(model)
 
 # List af all saved images features
 dataset_features = []
@@ -100,7 +92,7 @@ while True:
     # Apply non-maximum suppression to remove overlapping boxes
     indices = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
 
-    # Define image transformation
+    # Define image transformations
     height = 256
     width = 128
     normalizer = T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -138,7 +130,6 @@ while True:
                 image_tensor = crop_img[:, :, ::-1]
                 image_tensor = Image.fromarray(image_tensor.astype('uint8'), 'RGB')
                 image_tensor = test_transformer(image_tensor)
-                image_tensor = image_tensor
 
                 if torch.backends.mps.is_available():
                     model = model.to('mps')
