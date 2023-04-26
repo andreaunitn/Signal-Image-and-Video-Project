@@ -1,10 +1,13 @@
 from reid.feature_extraction.cnn import extract_cnn_feature
 from reid.utils.data import transforms as T
+import matplotlib.colors as colors
+from PIL import ImageColor
 from reid import models
 from PIL import Image
 import os.path as osp
 import numpy as np
 import pickle
+import random
 import torch
 import cv2
 
@@ -13,14 +16,24 @@ from PyQt6.QtGui import QImage, QPixmap, QPalette, QColor
 from PyQt6.QtCore import QTimer, Qt, QTime
 
 # ---------------------------------------------------------
-# Utility function
-def load_checkpoint(fpath):
+# Utility functions
+def load_model(fpath):
     if osp.isfile(fpath):
-        checkpoint = torch.load(fpath)
-        print("=> Loaded checkpoint '{}'".format(fpath))
-        return checkpoint
+        model = torch.load(fpath)
+        print("=> Loaded model '{}'".format(fpath))
+        return model
     else:
-        raise ValueError("=> No checkpoint found at '{}'".format(fpath))
+        raise ValueError("=> No model found at '{}'".format(fpath))
+    
+def get_color_list():
+    color_list = []
+    hex_values = list(colors.cnames.values())
+
+    for hex in hex_values:
+        color_list.append(ImageColor.getcolor(hex, "RGB"))
+
+    random.shuffle(color_list)
+    return color_list
 # ---------------------------------------------------------
 
 # Opencv and Yolo
@@ -31,9 +44,12 @@ dataset_features = [] # List af all saved images features
 feature_to_id = {} # Dictionary from feature tensor to id of relative person
 new_ids = 0 # Number of new identies
 tot_ids = 0 # Total number of identities
-threshold = 0.75 # Threshold
-detect = False # At least one people has been detected
+threshold = 0.75 # Threshold for new ids
+detect = False # At least one person has been detected
 detect_counter = 0 # Number of frames for new ids
+color_list = get_color_list() # List of colors for bounding boxes
+color_counter = 0 # Counter for selecting the boundng box color
+person_to_color = {} # Dictionary from person id to the color of the bounding box
 
 # Image transformations
 height = 256
@@ -47,8 +63,10 @@ test_transformer = T.Compose([
 
 # Load the YOLOv7-tiny model and configuration files
 net = cv2.dnn.readNetFromDarknet('yolo/yolov7-tiny.cfg', 'yolo/yolov7-tiny.weights')
-net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
-net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
+
+if torch.backends.cudnn.is_available():
+    net.setPreferableBackend(cv2.dnn.DNN_BACKEND_CUDA)
+    net.setPreferableTarget(cv2.dnn.DNN_TARGET_CUDA)
 
 # Load the COCO class labels
 classes = []
@@ -64,14 +82,13 @@ cap = cv2.VideoCapture(0)
 
 # Loading the model
 model = models.create("resnet50", num_features=1024, dropout=0, num_classes=751, last_stride=2)
-checkpoint = load_checkpoint("model_best.pth.tar")
-model.load_state_dict(checkpoint['state_dict'])
+m = load_model("model_best.pth.tar")
+model.load_state_dict(m['state_dict'])
 
 if torch.backends.mps.is_available():
     model = model.to('mps')
 else:
     model = model.cuda()
-
 # ---------------------------------------------------------
 
 class MainWindow(QMainWindow):
@@ -142,7 +159,7 @@ class MainWindow(QMainWindow):
         # -------------------
 
     def update_image(self):
-        global is_first_frame, dataset_features, model, new_ids, tot_ids, detect, detect_counter
+        global is_first_frame, dataset_features, model, new_ids, tot_ids, detect, detect_counter, color_counter
 
         # Read the next frame from the video stream
         ret, frame = cap.read()
@@ -153,7 +170,7 @@ class MainWindow(QMainWindow):
 
         frame_copy = frame.copy()
 
-        # Detect people in the frame using YOLOv3
+        # Detect people in the frame using YOLO
         blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416), swapRB=True, crop=False)
         net.setInput(blob)
         outputs = net.forward(output_layers)
@@ -188,9 +205,6 @@ class MainWindow(QMainWindow):
                 x, y, w, h = boxes[i]
                 label = classes[class_ids[i]]
                 confidence = confidences[i]
-                color = (0, 255, 0)
-                cv2.rectangle(frame_copy, (x, y), (x+w, y+h), color, 2)
-                cv2.putText(frame_copy, f"{label}: {confidence:.2f}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
                     
                 # Crop the image within the bounding box and save it to a file
                 if x < 0:
@@ -220,13 +234,18 @@ class MainWindow(QMainWindow):
                         query_features = extract_cnn_feature(model, image_tensor.unsqueeze(0).cuda())
 
                     id_in_frame = 0
+                    color = (0,0,0)
 
                     # First frame
                     if is_first_frame:
-                        file_name = f"{label}_{new_ids}.jpg"
-                        detect = True
-                        new_ids += 1
+                        color = color_list[color_counter]
+                        person_to_color[new_ids] = color
 
+                        detect = True
+                        file_name = f"{label}_{new_ids}.jpg"
+
+                        new_ids += 1
+                        color_counter += 1
                     else:
                         all_features = torch.stack(dataset_features)
 
@@ -238,20 +257,28 @@ class MainWindow(QMainWindow):
                         cos_value = cos_sim[most_similar_index].item()
                         most_similar_features = dataset_features[most_similar_index]
                         
-                        # New people detected
+                        # New person detected
                         if cos_value < threshold:
+                            color = color_list[color_counter]
+                            person_to_color[new_ids] = color
+
                             detect = True
-                            new_ids += 1
                             id_in_frame = new_ids
                             file_name = f"{label}_{id_in_frame}.jpg"
                             cv2.imwrite(file_name, crop_img)
+
+                            new_ids += 1
+                            color_counter += 1
                         else:
-                            # No new people detected -> find most similar image
+                            # No new person detected -> find most similar image
                             id_in_frame = feature_to_id[hash(pickle.dumps(most_similar_features))]
                             closest_img = cv2.imread(f"{label}_{id_in_frame}.jpg")
                             cv2.imshow('most_similar_image', closest_img)
+
                             file_name = f"{label}_{id_in_frame}.jpg"
                             detect = False
+
+                            color = person_to_color[id_in_frame]
 
                     dataset_features += query_features
 
@@ -261,6 +288,10 @@ class MainWindow(QMainWindow):
                         cv2.imwrite(file_name, crop_img)
 
                     is_first_frame = False
+                
+                cv2.rectangle(frame_copy, (x, y), (x+w, y+h), color, 2)
+                cv2.putText(frame_copy, f"Person id: {id_in_frame}, conf = {confidence:.2f}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+
         else:
             tot_ids = 0
             detect = False

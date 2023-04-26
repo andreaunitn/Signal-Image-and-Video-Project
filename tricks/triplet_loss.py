@@ -24,7 +24,6 @@ from reid.loss import CETLoss
 from reid import datasets
 from reid import models
 
-
 import warnings
 warnings.filterwarnings("ignore")
 
