@@ -79,6 +79,8 @@ output_layers = [layer_names[i-1] for i in net.getUnconnectedOutLayers()]
 
 # Load the video stream
 cap = cv2.VideoCapture(0)
+#cap.set(cv2.CAP_PROP_FRAME_WIDTH, 720)
+#cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 # Loading the model
 model = models.create("resnet50", num_features=1024, dropout=0, num_classes=751, last_stride=2)
@@ -167,6 +169,8 @@ class MainWindow(QMainWindow):
         # If there was an error reading the frame, break out of the loop
         if not ret:
             assert False, "Error while reading the frame"
+
+        frame_copy = frame.copy()
 
         # Detect people in the frame using YOLO
         blob = cv2.dnn.blobFromImage(frame, 1/255.0, (256, 256), swapRB=True, crop=False)
@@ -287,8 +291,8 @@ class MainWindow(QMainWindow):
 
                     is_first_frame = False
                 
-                cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
-                cv2.putText(frame, f"Person id: {id_in_frame}, conf = {confidence:.2f}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+                cv2.rectangle(frame_copy, (x, y), (x+w, y+h), color, 2)
+                cv2.putText(frame_copy, f"Person id: {id_in_frame}, conf = {confidence:.2f}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
 
         else:
             tot_ids = 0
@@ -314,7 +318,7 @@ class MainWindow(QMainWindow):
         detect_counter -= 1
 
         # Resize the frame to match the size of the label
-        frame = cv2.resize(frame, (self.image_label.width() - 450, self.image_label.height()))
+        frame_copy = cv2.resize(frame_copy, (self.image_label.width() - 450, self.image_label.height()))
 
         # Calculate the frame rate
         self.frames += 1
@@ -326,10 +330,10 @@ class MainWindow(QMainWindow):
 
         # Display the FPS value on the image frame
         fps_text = f"FPS: {self.fps:.2f}"
-        cv2.putText(frame, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+        cv2.putText(frame_copy, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
 
         # Convert the image to a Qt-compatible format
-        image = QImage(frame, frame.shape[1], frame.shape[0], QImage.Format.Format_BGR888)
+        image = QImage(frame_copy, frame_copy.shape[1], frame_copy.shape[0], QImage.Format.Format_BGR888)
 
         # Display the image on the label
         self.image_label.setPixmap(QPixmap.fromImage(image))
