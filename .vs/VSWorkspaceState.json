@@ -1,9 +1,9 @@
 {
   "ExpandedNodes": [
     "",
+    "\\app",
+    "\\app\\tensorRt",
     "\\reid",
-    "\\reid\\evaluation_metrics",
-    "\\reid\\feature_extraction",
     "\\reid\\loss",
     "\\reid\\metric_learning",
     "\\reid\\models",
@@ -11,6 +11,6 @@
     "\\reid\\utils\\data",
     "\\tricks"
   ],
-  "SelectedNode": "\\tricks\\triplet_loss.py",
+  "SelectedNode": "\\app\\tensorRt\\appYolo2.py",
   "PreviewInSolutionExplorer": false
 }
