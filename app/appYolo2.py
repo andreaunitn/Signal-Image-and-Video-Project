@@ -8,10 +8,12 @@ import os.path as osp
 import numpy as np
 import pickle
 import random
+import shutil
 import torch
 import cv2
+import os
 
-from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWidget
+from PyQt6.QtWidgets import QApplication, QLabel, QMainWindow, QVBoxLayout, QWidget, QHBoxLayout
 from PyQt6.QtGui import QImage, QPixmap, QPalette, QColor
 from PyQt6.QtCore import QTimer, Qt, QTime
 
@@ -34,6 +36,13 @@ def get_color_list():
 
     random.shuffle(color_list)
     return color_list
+
+def check_image_folder():
+    if os.path.exists("images"):
+        shutil.rmtree("images")
+        os.mkdir("images")
+    else:
+        os.mkdir("images")
 # ---------------------------------------------------------
 
 # Opencv and Yolo
@@ -95,6 +104,8 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        check_image_folder()
+
         # PyQt 
         # -------------------
         # Read the size of the first frame
@@ -104,27 +115,31 @@ class MainWindow(QMainWindow):
         height, width, _ = frame.shape
 
         # Set the width of the window and the layout to include padding
-        padding = 450
-        window_width = int(width / 2) + padding
+        window_width = int(width / 2)
+        window_height = int(height / 2)
 
         # Set the background color of the main window to white
         palette = QPalette()
         palette.setColor(QPalette.ColorRole.Window, QColor(255, 255, 255))
         self.setPalette(palette)
 
-        layout = QVBoxLayout()
+        # Main window layout
+        window_layout = QHBoxLayout()
+
+        # Layout for the OpenCV window
+        opencv_layout = QVBoxLayout()
 
         # Create a label to display the image
         self.image_label = QLabel(self)
-        self.image_label.setFixedSize(window_width, int(height / 2))
-        layout.addWidget(self.image_label, stretch=2)
+        self.image_label.setFixedSize(window_width, window_height)
+        opencv_layout.addWidget(self.image_label, stretch=2)
 
         self.image_label.setStyleSheet("color: black;")
 
         people_layout = QVBoxLayout()
 
         # Set the width of the labels to include padding
-        label_width = int((window_width - padding) / 2)
+        label_width = int(window_width / 2)
 
         self.n_people = QLabel(self)
         self.n_people.setText("Tot. number of people: {}".format(new_ids))
@@ -140,11 +155,12 @@ class MainWindow(QMainWindow):
         self.new_people.setFixedSize(label_width, self.new_people.height())
         people_layout.addWidget(self.new_people)
 
-        layout.addLayout(people_layout)
+        opencv_layout.addLayout(people_layout)
+        window_layout.addLayout(opencv_layout)
 
         # Set the layout of the main window
         central_widget = QWidget()
-        central_widget.setLayout(layout)
+        central_widget.setLayout(window_layout)
         self.setCentralWidget(central_widget)
 
         # Initialize variables for frame rate calculation
@@ -158,6 +174,7 @@ class MainWindow(QMainWindow):
         self.timer.start(0)
         # -------------------
 
+
     def update_image(self):
         global is_first_frame, dataset_features, model, new_ids, tot_ids, detect, detect_counter, color_counter
 
@@ -168,29 +185,32 @@ class MainWindow(QMainWindow):
         if not ret:
             assert False, "Error while reading the frame"
 
+        frame_copy = frame.copy()
+
         # Detect people in the frame using YOLO
         blob = cv2.dnn.blobFromImage(frame, 1/255.0, (256, 256), swapRB=True, crop=False)
         net.setInput(blob)
         outputs = net.forward(output_layers)
-        boxes = []
-        confidences = []
-        class_ids = []
-        for output in outputs:
-            for detection in output:
-                scores = detection[5:]
-                class_id = np.argmax(scores)
-                confidence = scores[class_id]
 
-                if class_id == 0 and confidence > 0.5:
-                    center_x = int(detection[0] * frame.shape[1])
-                    center_y = int(detection[1] * frame.shape[0])
-                    w = int(detection[2] * frame.shape[1])
-                    h = int(detection[3] * frame.shape[0])
-                    x = center_x - w // 2
-                    y = center_y - h // 2
-                    boxes.append([x, y, w, h])
-                    confidences.append(float(confidence))
-                    class_ids.append(class_id)
+        # Extract box information from output
+        output_arr = np.vstack(outputs)
+        class_ids = np.argmax(output_arr[:, 5:], axis=1)
+        confidences = output_arr[:, 5:][np.arange(len(output_arr)), class_ids]
+        boxes = output_arr[:, :4]
+
+        # Filter boxes for people with high confidence scores
+        mask = (class_ids == 0) & (confidences > 0.5)
+        boxes = boxes[mask]
+        confidences = confidences[mask]
+        class_ids = class_ids[mask]
+
+        # Convert boxes to x, y, w, h format
+        x = boxes[:, 0] * frame.shape[1] - boxes[:, 2] * frame.shape[1] // 2
+        y = boxes[:, 1] * frame.shape[0] - boxes[:, 3] * frame.shape[0] // 2
+        w = boxes[:, 2] * frame.shape[1]
+        h = boxes[:, 3] * frame.shape[0]
+
+        boxes = np.stack([x, y, w, h], axis=1)
 
         # Apply non-maximum suppression to remove overlapping boxes
         indices = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
@@ -200,7 +220,7 @@ class MainWindow(QMainWindow):
             tot_ids = len(indices)
 
             for i in indices.flatten():
-                x, y, w, h = boxes[i]
+                x, y, w, h = boxes[i].astype(int)
                 label = classes[class_ids[i]]
                 confidence = confidences[i]
                     
@@ -240,7 +260,7 @@ class MainWindow(QMainWindow):
                         person_to_color[new_ids] = color
 
                         detect = True
-                        file_name = f"{label}_{new_ids}.jpg"
+                        file_name = f"images/{label}_{new_ids}.jpg"
 
                         new_ids += 1
                         color_counter += 1
@@ -262,7 +282,7 @@ class MainWindow(QMainWindow):
 
                             detect = True
                             id_in_frame = new_ids
-                            file_name = f"{label}_{id_in_frame}.jpg"
+                            file_name = f"images/{label}_{id_in_frame}.jpg"
                             cv2.imwrite(file_name, crop_img)
 
                             new_ids += 1
@@ -270,10 +290,10 @@ class MainWindow(QMainWindow):
                         else:
                             # No new person detected -> find most similar image
                             id_in_frame = feature_to_id[hash(pickle.dumps(most_similar_features))]
-                            closest_img = cv2.imread(f"{label}_{id_in_frame}.jpg")
+                            closest_img = cv2.imread(f"images/{label}_{id_in_frame}.jpg")
                             cv2.imshow('most_similar_image', closest_img)
 
-                            file_name = f"{label}_{id_in_frame}.jpg"
+                            file_name = f"images/{label}_{id_in_frame}.jpg"
                             detect = False
 
                             color = person_to_color[id_in_frame]
@@ -287,8 +307,8 @@ class MainWindow(QMainWindow):
 
                     is_first_frame = False
                 
-                cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
-                cv2.putText(frame, f"Person id: {id_in_frame}, conf = {confidence:.2f}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+                cv2.rectangle(frame_copy, (x, y), (x+w, y+h), color, 2)
+                cv2.putText(frame_copy, f"Person id: {id_in_frame}, conf = {confidence:.2f}", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
 
         else:
             tot_ids = 0
@@ -303,7 +323,7 @@ class MainWindow(QMainWindow):
             detect_counter = 15
 
         if detect_counter > 0:
-                self.new_people.setText("New people detected!")
+                self.new_people.setText("New person detected!")
                 self.new_people.setAlignment(Qt.AlignmentFlag.AlignLeft)
                 self.new_people.setStyleSheet("color: red; font-weight: bold; font-size: 20px;")
         else:
@@ -314,7 +334,7 @@ class MainWindow(QMainWindow):
         detect_counter -= 1
 
         # Resize the frame to match the size of the label
-        frame = cv2.resize(frame, (self.image_label.width() - 450, self.image_label.height()))
+        frame_copy = cv2.resize(frame_copy, (self.image_label.width(), self.image_label.height()))
 
         # Calculate the frame rate
         self.frames += 1
@@ -326,10 +346,10 @@ class MainWindow(QMainWindow):
 
         # Display the FPS value on the image frame
         fps_text = f"FPS: {self.fps:.2f}"
-        cv2.putText(frame, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
+        cv2.putText(frame_copy, fps_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)
 
         # Convert the image to a Qt-compatible format
-        image = QImage(frame, frame.shape[1], frame.shape[0], QImage.Format.Format_BGR888)
+        image = QImage(frame_copy, frame_copy.shape[1], frame_copy.shape[0], QImage.Format.Format_BGR888)
 
         # Display the image on the label
         self.image_label.setPixmap(QPixmap.fromImage(image))
