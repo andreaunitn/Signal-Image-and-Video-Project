@@ -2,7 +2,6 @@ from __future__ import print_function, absolute_import
 import os.path as osp
 import argparse
 
-import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.backends import cudnn
 from torch import nn
@@ -17,10 +16,8 @@ from reid.utils.data import transforms as T
 from reid.dist_metric import DistanceMetric
 from reid.evaluators import Evaluator
 from reid.utils.logging import Logger
-from reid.loss import TripletLoss
 from reid.trainers import Trainer
 from reid.loss import CETLossV2
-from reid.loss import CETLoss
 from reid import datasets
 from reid import models
 
