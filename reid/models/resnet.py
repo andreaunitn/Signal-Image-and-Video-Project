@@ -78,16 +78,13 @@ class ResNet(nn.Module):
 
                 # -----------------------------
                 # Trick 5: BNNeck
-                
                 if(self.norm):
                     
                     self.classifier = nn.Linear(self.num_features, self.num_classes, bias=False)
                     init.kaiming_normal_(self.classifier.weight, mode='fan_out')
-                    
                 # -----------------------------
 
                 else:
-                    
                     self.classifier = nn.Linear(self.num_features, self.num_classes)
                     init.normal_(self.classifier.weight, std=0.001)
                     init.constant_(self.classifier.bias, 0)
@@ -114,9 +111,12 @@ class ResNet(nn.Module):
             x = F.relu(x)
         if self.dropout > 0:
             x = self.drop(x)
+
+        z = x.clone()
+        
         if self.num_classes > 0:
             x = self.classifier(x)
-        return y, x
+        return y, z, x
 
     def reset_params(self):
         for m in self.modules():

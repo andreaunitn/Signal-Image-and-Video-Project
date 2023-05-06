@@ -39,31 +39,58 @@ def extract_features(model, data_loader, print_freq=1, metric=None):
 
     return features, labels
 
-
 def pairwise_distance(features, query=None, gallery=None, metric=None):
-    if query is None and gallery is None:
-        n = len(features)
-        x = torch.cat(list(features.values()))
-        x = x.view(n, -1)
+    useEuclidean = False
+
+    if metric is None:
+        useEuclidean = True
+
+    if useEuclidean or metric.algorithm == "euclidean":
+        if query is None and gallery is None:
+            n = len(features)
+            x = torch.cat(list(features.values()))
+            x = x.view(n, -1)
+            if metric is not None:
+                x = metric.transform(x)
+            dist = torch.pow(x, 2).sum(dim=1, keepdim=True) * 2
+            dist = dist.expand(n, n) - 2 * torch.mm(x, x.t())
+            return dist
+
+        x = torch.cat([features[f].unsqueeze(0) for f, _, _ in query], 0)
+        y = torch.cat([features[f].unsqueeze(0) for f, _, _ in gallery], 0)
+        m, n = x.size(0), y.size(0)
+        x = x.view(m, -1)
+        y = y.view(n, -1)
         if metric is not None:
             x = metric.transform(x)
-        dist = torch.pow(x, 2).sum(dim=1, keepdim=True) * 2
-        dist = dist.expand(n, n) - 2 * torch.mm(x, x.t())
+            y = metric.transform(y)
+        dist = torch.pow(x, 2).sum(dim=1, keepdim=True).expand(m, n) + \
+            torch.pow(y, 2).sum(dim=1, keepdim=True).expand(n, m).t()
+        dist.addmm_(x, y.t(), beta=1, alpha=-2)
         return dist
+    else:
+        if query is None and gallery is None:
+            n = len(features)
+            x = torch.cat(list(features.values()))
+            x = x.view(n, -1)
+            if metric is not None:
+                x = metric.transform(x)
+            x_norm = x.norm(dim=1, keepdim=True)
+            dist = torch.mm(x, x.t()) / torch.mm(x_norm, x_norm.t())
+            return dist
 
-    x = torch.cat([features[f].unsqueeze(0) for f, _, _ in query], 0)
-    y = torch.cat([features[f].unsqueeze(0) for f, _, _ in gallery], 0)
-    m, n = x.size(0), y.size(0)
-    x = x.view(m, -1)
-    y = y.view(n, -1)
-    if metric is not None:
-        x = metric.transform(x)
-        y = metric.transform(y)
-    dist = torch.pow(x, 2).sum(dim=1, keepdim=True).expand(m, n) + \
-           torch.pow(y, 2).sum(dim=1, keepdim=True).expand(n, m).t()
-    dist.addmm_(x, y.t(), beta=1, alpha=-2)
-    return dist
-
+        x = torch.cat([features[f].unsqueeze(0) for f, _, _ in query], 0)
+        y = torch.cat([features[f].unsqueeze(0) for f, _, _ in gallery], 0)
+        m, n = x.size(0), y.size(0)
+        x = x.view(m, -1)
+        y = y.view(n, -1)
+        if metric is not None:
+            x = metric.transform(x)
+            y = metric.transform(y)
+        x_norm = x.norm(dim=1, keepdim=True)
+        y_norm = y.norm(dim=1, keepdim=True)
+        dist = torch.mm(x, y.t()) / torch.mm(x_norm, y_norm.t())
+        return dist
 
 def evaluate_all(distmat, query=None, gallery=None,
                  query_ids=None, gallery_ids=None,
@@ -107,7 +134,6 @@ def evaluate_all(distmat, query=None, gallery=None,
 
     # Use the allshots cmc top-1 score for validation criterion
     return cmc_scores['allshots'][0]
-
 
 class Evaluator(object):
     def __init__(self, model):

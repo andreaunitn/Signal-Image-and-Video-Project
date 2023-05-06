@@ -1,13 +1,13 @@
 from __future__ import absolute_import
 
-from metric_learn import (ITML_Supervised, LMNN, LSML_Supervised,
-                          SDML_Supervised, NCA, LFDA, RCA_Supervised)
+from metric_learn import (ITML_Supervised, LMNN, LSML_Supervised, SDML_Supervised, NCA, LFDA, RCA_Supervised)
 
 from .euclidean import Euclidean
 from .kissme import KISSME
 
 __factory = {
     'euclidean': Euclidean,
+    'cosine': Euclidean,
     'kissme': KISSME,
     'itml': ITML_Supervised,
     'lmnn': LMNN,

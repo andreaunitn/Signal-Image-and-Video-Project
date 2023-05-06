@@ -13,7 +13,7 @@ class DistanceMetric(object):
         self.metric = get_metric(algorithm, *args, **kwargs)
 
     def train(self, model, data_loader):
-        if self.algorithm == 'euclidean': return
+        if self.algorithm == 'euclidean' or self.algorithm == 'cosine': return
         features, labels = extract_features(model, data_loader)
         features = torch.stack(features.values()).numpy()
         labels = torch.Tensor(list(labels.values())).numpy()

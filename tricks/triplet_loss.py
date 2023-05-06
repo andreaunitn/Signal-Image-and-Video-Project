@@ -118,7 +118,7 @@ def main(args):
         norm = False
     else:
         norm = True
-
+        args.dist_metric = 'cosine'
     # -----------------------------
 
     # Create model
@@ -183,8 +183,6 @@ def main(args):
             criterion = CETCTLoss(num_classes, feat_dim=1024, margin=args.margin, e=0.1).to(mps_device)
         else:
             criterion = CETLossV2(num_classes, feat_dim=1024, margin=args.margin, e=0.1).cuda()
-
-
     # -----------------------------
 
     # Optimizer
@@ -283,7 +281,7 @@ if __name__ == '__main__':
     parser.add_argument('--print-freq', type=int, default=1)
     
     # metric learning
-    parser.add_argument('--dist-metric', type=str, default='euclidean', choices=['euclidean', 'kissme'])
+    parser.add_argument('--dist-metric', type=str, default='euclidean', choices=['euclidean', 'cosine'])
     
     # misc
     working_dir = osp.dirname(osp.abspath(__file__))
