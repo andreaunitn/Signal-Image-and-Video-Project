@@ -124,7 +124,7 @@ def main(args):
     # Create model
     # Hacking here to let the classifier be the last feature embedding layer
     # Net structure: avgpool -> FC(1024) -> FC(args.features)
-    model = models.create(args.arch, num_features=1024, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value, norm=norm)
+    model = models.create(args.arch, num_features=2048, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value, norm=norm)
 
 
     # Load from checkpoint
@@ -150,11 +150,18 @@ def main(args):
     evaluator = Evaluator(model)
     if args.evaluate:
         metric.train(model, train_loader)
-        print("Validation:")
+        print("validation:")
         evaluator.evaluate(val_loader, dataset.val, dataset.val, metric)
-        print("Test:")
+        print("test:")
         evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric)
         return
+        #print('Test with best model:')
+        #checkpoint = load_checkpoint(osp.join(args.logs_dir, 'model_best.pth.tar'))
+        #model.module.load_state_dict(checkpoint['state_dict'])
+        #metric.train(model, train_loader)
+        #print(metric)
+        #evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric)
+        #return
 
     # -----------------------------
     # Trick 3: Label Smoothing
@@ -226,7 +233,7 @@ def main(args):
         if epoch < args.start_save:
             continue
         
-        top1 = evaluator.evaluate(val_loader, dataset.val, dataset.val)
+        top1 = evaluator.evaluate(val_loader, dataset.val, dataset.val, test=True)
 
         is_best = top1 > best_top1
         best_top1 = max(top1, best_top1)
@@ -243,7 +250,7 @@ def main(args):
     checkpoint = load_checkpoint(osp.join(args.logs_dir, 'model_best.pth.tar'))
     model.module.load_state_dict(checkpoint['state_dict'])
     metric.train(model, train_loader)
-    evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric)
+    evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric, test=True)
 
 
 if __name__ == '__main__':

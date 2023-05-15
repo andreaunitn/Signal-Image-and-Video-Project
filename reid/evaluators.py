@@ -9,7 +9,7 @@ from .feature_extraction import extract_cnn_feature
 from .utils.meters import AverageMeter
 
 
-def extract_features(model, data_loader, print_freq=1, metric=None):
+def extract_features(model, data_loader, print_freq=1, metric=None, test=False):
     model.eval()
     batch_time = AverageMeter()
     data_time = AverageMeter()
@@ -21,7 +21,7 @@ def extract_features(model, data_loader, print_freq=1, metric=None):
     for i, (imgs, fnames, pids, _) in enumerate(data_loader):
         data_time.update(time.time() - end)
 
-        outputs = extract_cnn_feature(model, imgs)
+        outputs = extract_cnn_feature(model, imgs, test=test)
         for fname, output, pid in zip(fnames, outputs, pids):
             features[fname] = output
             labels[fname] = pid
@@ -76,7 +76,9 @@ def pairwise_distance(features, query=None, gallery=None, metric=None):
             if metric is not None:
                 x = metric.transform(x)
             x_norm = x.norm(dim=1, keepdim=True)
-            dist = torch.mm(x, x.t()) / torch.mm(x_norm, x_norm.t())
+            x_normalized = x.div(x_norm)
+            dist = torch.mm(x_normalized, x_normalized.t())
+            dist = 1 - dist
             return dist
 
         x = torch.cat([features[f].unsqueeze(0) for f, _, _ in query], 0)
@@ -89,7 +91,10 @@ def pairwise_distance(features, query=None, gallery=None, metric=None):
             y = metric.transform(y)
         x_norm = x.norm(dim=1, keepdim=True)
         y_norm = y.norm(dim=1, keepdim=True)
-        dist = torch.mm(x, y.t()) / torch.mm(x_norm, y_norm.t())
+        x_normalized = x.div(x_norm)
+        y_normalized = y.div(y_norm)
+        dist = torch.mm(x_normalized, y_normalized.t())
+        dist = 1 - dist
         return dist
 
 def evaluate_all(distmat, query=None, gallery=None,
@@ -140,7 +145,7 @@ class Evaluator(object):
         super(Evaluator, self).__init__()
         self.model = model
 
-    def evaluate(self, data_loader, query, gallery, metric=None):
-        features, _ = extract_features(self.model, data_loader)
+    def evaluate(self, data_loader, query, gallery, metric=None, test=False):
+        features, _ = extract_features(self.model, data_loader, test=test)
         distmat = pairwise_distance(features, query, gallery, metric=metric)
         return evaluate_all(distmat, query=query, gallery=gallery)

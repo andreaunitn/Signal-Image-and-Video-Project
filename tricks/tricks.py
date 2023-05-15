@@ -12,7 +12,7 @@ def main(args):
     epochs = args.epochs
     logs_dir = args.logs_dir
 
-    # command to execute triplet loss
+    # command to execute triplet loss --resume C:/Users/miche/Documents/UNITN/Progetto-Signal-Image-and-Video/tricks/logs/model_best.pth.tar --evaluate
     command = "python triplet_loss.py -d {} -b {} -t {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {} --combine-trainval".format(dataset, batch_size, trick_number, k, logs_dir, epochs)
     subprocess.run(command, shell = True)
 

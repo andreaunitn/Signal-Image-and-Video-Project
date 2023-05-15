@@ -79,9 +79,11 @@ class ResNet(nn.Module):
                 # -----------------------------
                 # Trick 5: BNNeck
                 if(self.norm):
-                    
-                    self.classifier = nn.Linear(self.num_features, self.num_classes, bias=False)
-                    init.kaiming_normal_(self.classifier.weight, mode='fan_out')
+                    self.feat_bn.bias.requires_grad_(False)
+                    self.fc = nn.Linear(self.num_features, 512, bias=False)
+                    init.kaiming_normal_(self.fc.weight, mode="fan_out")
+                    self.classifier = nn.Linear(512, self.num_classes, bias=False)
+                    init.normal_(self.classifier.weight, std=0.001)
                 # -----------------------------
 
                 else:
@@ -106,9 +108,11 @@ class ResNet(nn.Module):
 
         if self.has_embedding:
             x = self.feat(x)
-            y = x.clone()
             x = self.feat_bn(x)
+            y = x.clone()
+            x = self.fc(x)
             x = F.relu(x)
+
         if self.dropout > 0:
             x = self.drop(x)
 
@@ -116,6 +120,7 @@ class ResNet(nn.Module):
         
         if self.num_classes > 0:
             x = self.classifier(x)
+
         return y, z, x
 
     def reset_params(self):

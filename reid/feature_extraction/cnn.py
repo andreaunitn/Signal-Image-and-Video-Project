@@ -7,13 +7,16 @@ from torch.autograd import Variable
 from ..utils import to_torch
 
 
-def extract_cnn_feature(model, inputs, modules=None):
+def extract_cnn_feature(model, inputs, modules=None, test=False):
     model.eval()
     inputs = to_torch(inputs)
 
     with torch.no_grad():
         if modules is None:
-            _, outputs, _ = model(inputs)
+            if test:
+                _, outputs, _ = model(inputs)
+            else:
+                outputs, _, _ = model(inputs)
             outputs = outputs.data.cpu()
             return outputs
         # Register forward hook for each module

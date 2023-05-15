@@ -2,13 +2,13 @@
   "ExpandedNodes": [
     "",
     "\\reid",
-    "\\reid\\evaluation_metrics",
-    "\\reid\\feature_extraction",
     "\\reid\\loss",
     "\\reid\\metric_learning",
     "\\reid\\models",
     "\\reid\\utils",
     "\\reid\\utils\\data",
+    "\\test",
+    "\\test\\models",
     "\\tricks"
   ],
   "SelectedNode": "\\tricks\\triplet_loss.py",
