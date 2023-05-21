@@ -48,6 +48,7 @@ class ResNet(nn.Module):
         # Trick 4: Last Stride
 
         if last_stride == 1:
+
             self.base.layer4[0].downsample[0].stride = (1, 1)
             self.base.layer4[0].conv2.stride = (1, 1)
         # -----------------------------
@@ -60,7 +61,7 @@ class ResNet(nn.Module):
             self.num_classes = num_classes
 
             out_planes = self.base.fc.in_features
-
+            
             # Append new layers
             if self.has_embedding:
                 self.feat = nn.Linear(out_planes, self.num_features)
@@ -78,8 +79,8 @@ class ResNet(nn.Module):
 
             if self.num_classes > 0:
                 self.classifier = nn.Linear(self.num_features, self.num_classes)
-                init.normal_(self.classifier.weight, std=0.001)
-                init.constant_(self.classifier.bias, 0)
+                #init.normal_(self.classifier.weight, std=0.001)
+                #init.constant_(self.classifier.bias, 0)
 
         if self.weights is None:
             self.reset_params()
@@ -95,15 +96,11 @@ class ResNet(nn.Module):
 
         x = F.adaptive_avg_pool2d(x, (1, 1))
         x = x.view(x.size(0), -1)
+        y = x.clone()
 
         if self.has_embedding:
             x = self.feat(x)
             x = self.feat_bn(x)
-            y = x.clone()
-
-        if self.norm:
-            x = F.normalize(x)
-        elif self.has_embedding:
             x = F.relu(x)
 
         if self.dropout > 0:
@@ -111,6 +108,7 @@ class ResNet(nn.Module):
 
         if self.num_classes > 0:
             x = self.classifier(x)
+
         return y, x
 
     def reset_params(self):

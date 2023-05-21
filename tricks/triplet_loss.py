@@ -110,8 +110,7 @@ def main(args):
     # Create model
     # Hacking here to let the classifier be the last feature embedding layer
     # Net structure: avgpool -> FC(1024) -> FC(args.features)
-    model = models.create(args.arch, num_features=1024, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value)
-
+    model = models.create(args.arch, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value)
     # -----------------------------
 
     # Load from checkpoint

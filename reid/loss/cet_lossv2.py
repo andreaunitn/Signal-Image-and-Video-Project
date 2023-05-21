@@ -40,7 +40,8 @@ class CETLossV2(torch.nn.Module):
         cross_entropy_loss = self.cross_entropy(logits, target)
         triplet_loss, _ = self.triplet(features, target)
         loss = cross_entropy_loss + triplet_loss
-
+        #loss = cross_entropy_loss
+        
         return loss
     
     # ------------------------------------
