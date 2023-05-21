@@ -7,8 +7,8 @@ from ..utils.serialization import write_json
 
 
 class DukeMTMC(Dataset):
-    url = 'https://drive.google.com/uc?id=0B0VOCNYh8HeRdnBPa2ZWaVBYSVk'
-    md5 = '2f93496f9b516d1ee5ef51c1d5e7d601'
+    url = 'https://drive.google.com/file/d/1jjE85dRCMOgRtvJ5RQV9-Afs-2_5dY3O/view'
+    md5 = '62d8f3c7d6b2c5dc3d8ca6af7515847c'
 
     def __init__(self, root, split_id=0, num_val=100, download=True):
         super(DukeMTMC, self).__init__(root, split_id=split_id)

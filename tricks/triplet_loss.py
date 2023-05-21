@@ -101,15 +101,12 @@ def main(args):
 
     # -----------------------------
     # Trick 4: Last Stride
-
-    if(args.t < 4):
+    if args.t < 4:
         last_stride_value = 2
     else:
         last_stride_value = 1
 
     # Create model
-    # Hacking here to let the classifier be the last feature embedding layer
-    # Net structure: avgpool -> FC(1024) -> FC(args.features)
     model = models.create(args.arch, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value)
     # -----------------------------
 
@@ -134,6 +131,7 @@ def main(args):
 
     # Evaluator
     evaluator = Evaluator(model)
+
     if args.evaluate:
         metric.train(model, train_loader)
         print("Validation:")
@@ -144,7 +142,6 @@ def main(args):
 
     # -----------------------------
     # Trick 3: Label Smoothing
-
     if args.t < 3:
         # Criterion
         # Enabling GPU acceleration on Mac devices
@@ -161,7 +158,6 @@ def main(args):
             criterion = CETLossV2(num_classes, margin=args.margin, e=0.1).to(mps_device)
         else:
             criterion = CETLossV2(num_classes, margin=args.margin, e=0.1).cuda()
-
     # -----------------------------
 
     # Optimizer
@@ -194,7 +190,6 @@ def main(args):
         
         for g in optimizer.param_groups:
             g['lr'] = lr * g.get('lr_mult', 1)
-    
     # -----------------------------
 
     # Start training
@@ -268,6 +263,6 @@ if __name__ == '__main__':
     parser.add_argument('--logs-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'logs'))
 
     # trick number
-    parser.add_argument('-t', type = int, default=0)
+    parser.add_argument('-t', type=int, default=0)
    
     main(parser.parse_args())
