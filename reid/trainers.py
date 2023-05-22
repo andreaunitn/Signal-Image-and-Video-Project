@@ -1,11 +1,11 @@
 from __future__ import print_function, absolute_import
+
+from torch.autograd import Variable
+import torch
 import time
 
-import torch
-from torch.autograd import Variable
-
+from .loss import TripletLoss, CETLossV2
 from .evaluation_metrics import accuracy
-from .loss import OIMLoss, TripletLoss, CETLoss, CETLossV2
 from .utils.meters import AverageMeter
 
 class BaseTrainer(object):
@@ -64,7 +64,6 @@ class Trainer(BaseTrainer):
         imgs, _, pids, _ = inputs
         inputs = [Variable(imgs)]
 
-        # enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
             targets = Variable(pids.to(mps_device))
@@ -77,10 +76,6 @@ class Trainer(BaseTrainer):
         features, logits = self.model(*inputs)
         if isinstance(self.criterion, torch.nn.CrossEntropyLoss):
             loss = self.criterion(logits, targets)
-            prec, = accuracy(logits.data, targets.data)
-            prec = prec[0]
-        elif isinstance(self.criterion, OIMLoss):
-            loss, logits = self.criterion(logits, targets)
             prec, = accuracy(logits.data, targets.data)
             prec = prec[0]
         elif isinstance(self.criterion, TripletLoss):

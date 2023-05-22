@@ -1,9 +1,9 @@
+import matplotlib.pyplot as plt
+import pycuda.driver as cuda
 import tensorrt as trt
 import pycuda.autoinit
-import pycuda.driver as cuda
 import numpy as np
 import cv2
-import matplotlib.pyplot as plt
 
 class BaseEngine(object):
     def __init__(self, engine_path):
@@ -233,9 +233,6 @@ def preproc(image, input_size, mean, std, swap=(2, 0, 1)):
         interpolation=cv2.INTER_LINEAR,
     ).astype(np.float32)
     padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
-    # if use yolox set
-    # padded_img = padded_img[:, :, ::-1]
-    # padded_img /= 255.0
     padded_img = padded_img[:, :, ::-1]
     padded_img /= 255.0
     if mean is not None:

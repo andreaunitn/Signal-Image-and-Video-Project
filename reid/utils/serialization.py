@@ -1,10 +1,10 @@
 from __future__ import print_function, absolute_import
-import json
+
+from torch.nn import Parameter
 import os.path as osp
 import shutil
-
 import torch
-from torch.nn import Parameter
+import json
 
 from .osutils import mkdir_if_missing
 

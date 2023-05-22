@@ -1,11 +1,11 @@
 from __future__ import print_function, absolute_import
-import time
+
 from collections import OrderedDict
-
 import torch
+import time
 
-from .evaluation_metrics import cmc, mean_ap
 from .feature_extraction import extract_cnn_feature
+from .evaluation_metrics import cmc, mean_ap
 from .utils.meters import AverageMeter
 
 
@@ -41,7 +41,6 @@ def extract_features(model, data_loader, print_freq=1, metric=None):
 
 
 def pairwise_distance(features, query=None, gallery=None, metric=None):
-
     if query is None and gallery is None:
         n = len(features)
         x = torch.cat(list(features.values()))
@@ -70,6 +69,7 @@ def evaluate_all(distmat, query=None, gallery=None,
                  query_ids=None, gallery_ids=None,
                  query_cams=None, gallery_cams=None,
                  cmc_topk=(1, 5, 10)):
+    
     if query is not None and gallery is not None:
         query_ids = [pid for _, pid, _ in query]
         gallery_ids = [pid for _, pid, _ in gallery]
@@ -90,7 +90,7 @@ def evaluate_all(distmat, query=None, gallery=None,
                          first_match_break=False),
         'dukemtmc': dict(separate_camera_set=True,
                        single_gallery_shot=True,
-                       first_match_break=True),
+                       first_match_break=False),
         'market1501': dict(separate_camera_set=False,
                            single_gallery_shot=False,
                            first_match_break=True)}

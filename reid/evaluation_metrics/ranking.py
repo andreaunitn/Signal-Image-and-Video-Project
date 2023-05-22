@@ -1,8 +1,8 @@
 from __future__ import absolute_import
-from collections import defaultdict
 
-import numpy as np
 from sklearn.metrics import average_precision_score
+from collections import defaultdict
+import numpy as np
 
 from ..utils import to_numpy
 
@@ -18,6 +18,7 @@ def cmc(distmat, query_ids=None, gallery_ids=None,
         separate_camera_set=False,
         single_gallery_shot=False,
         first_match_break=False):
+    
     distmat = to_numpy(distmat)
     m, n = distmat.shape
     # Fill up default values
@@ -79,6 +80,7 @@ def cmc(distmat, query_ids=None, gallery_ids=None,
 
 def mean_ap(distmat, query_ids=None, gallery_ids=None,
             query_cams=None, gallery_cams=None):
+    
     distmat = to_numpy(distmat)
     m, n = distmat.shape
     # Fill up default values

@@ -1,17 +1,12 @@
 from __future__ import absolute_import
+
 import warnings
 
-from .cuhk01 import CUHK01
-from .cuhk03 import CUHK03
 from .dukemtmc import DukeMTMC
 from .market1501 import Market1501
-from .viper import VIPeR
 
 
 __factory = {
-    'viper': VIPeR,
-    'cuhk01': CUHK01,
-    'cuhk03': CUHK03,
     'market1501': Market1501,
     'dukemtmc': DukeMTMC,
 }
@@ -28,8 +23,7 @@ def create(name, root, *args, **kwargs):
     Parameters
     ----------
     name : str
-        The dataset name. Can be one of 'viper', 'cuhk01', 'cuhk03',
-        'market1501', and 'dukemtmc'.
+        The dataset name. Can be one of 'market1501' or 'dukemtmc'.
     root : str
         The path to the dataset directory.
     split_id : int, optional

@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
-import numpy as np
 from metric_learn.base_metric import BaseMetricLearner
+import numpy as np
 
 
 def validate_cov_matrix(M):

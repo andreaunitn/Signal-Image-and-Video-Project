@@ -1,9 +1,10 @@
 from __future__ import print_function, absolute_import
+
 import os.path as osp
 
-from ..utils.data import Dataset
-from ..utils.osutils import mkdir_if_missing
 from ..utils.serialization import write_json
+from ..utils.osutils import mkdir_if_missing
+from ..utils.data import Dataset
 
 
 class Market1501(Dataset):

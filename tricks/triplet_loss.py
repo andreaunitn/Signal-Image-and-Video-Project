@@ -95,7 +95,7 @@ def main(args):
     assert args.batch_size % args.num_instances == 0, 'num_instances should divide batch_size'
     
     if args.height is None or args.width is None:
-        args.height, args.width = (144, 56) if args.arch == 'inception' else (256, 128)
+        args.height, args.width = (256, 128)
     
     dataset, num_classes, train_loader, val_loader, test_loader = get_data(args.dataset, args.split, args.data_dir, args.height, args.width, args.batch_size, args.num_instances, args.workers, args.combine_trainval, args.t)
 
@@ -144,7 +144,6 @@ def main(args):
     # Trick 3: Label Smoothing
     if args.t < 3:
         # Criterion
-        # Enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
             criterion = CETLossV2(num_classes, margin=args.margin).to(mps_device)
@@ -152,7 +151,6 @@ def main(args):
             criterion = CETLossV2(num_classes, margin=args.margin).cuda()
     else:
         # Criterion
-        # Enabling GPU acceleration on Mac devices
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
             criterion = CETLossV2(num_classes, margin=args.margin, e=0.1).to(mps_device)
@@ -221,21 +219,21 @@ def main(args):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Triplet loss classification")
+    parser = argparse.ArgumentParser(description="Person re-identification training and evaluation parameters")
     
     # data
     parser.add_argument('-d', '--dataset', type=str, default='market1501', choices=datasets.names())
     parser.add_argument('-b', '--batch-size', type=int, default=64)
     parser.add_argument('-j', '--workers', type=int, default=4)
     parser.add_argument('--split', type=int, default=0)
-    parser.add_argument('--height', type=int, help="input height, default: 256 for resnet*, 144 for inception")
-    parser.add_argument('--width', type=int, help="input width, default: 128 for resnet*, 56 for inception")
-    parser.add_argument('--combine-trainval', action='store_true', help="train and val sets together for training, val set alone for validation")
+    parser.add_argument('--height', type=int, help="input height, default: 256 for resnet*")
+    parser.add_argument('--width', type=int, help="input width, default: 128 for resnet*")
+    parser.add_argument('--combine-trainval', action='store_true', help="train and validation sets together for training, test set alone for evaluation")
     parser.add_argument('--num-instances', type=int, default=4, help="each minibatch consist of (batch_size // num_instances) identities, and each identity has num_instances instances, default: 4")
     
     # model
     parser.add_argument('-a', '--arch', type=str, default='resnet50', choices=models.names())
-    parser.add_argument('--features', type=int, default=128)
+    parser.add_argument('--features', type=int, default=0)
     parser.add_argument('--dropout', type=float, default=0)
     
     # loss
@@ -255,7 +253,7 @@ if __name__ == '__main__':
     parser.add_argument('--print-freq', type=int, default=1)
     
     # metric learning
-    parser.add_argument('--dist-metric', type=str, default='euclidean', choices=['euclidean', 'kissme'])
+    parser.add_argument('--dist-metric', type=str, default='euclidean', choices=['euclidean', 'cosine'])
     
     # misc
     working_dir = osp.dirname(osp.abspath(__file__))

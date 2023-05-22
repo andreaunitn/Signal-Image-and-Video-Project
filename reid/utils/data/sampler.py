@@ -1,9 +1,9 @@
 from __future__ import absolute_import
-from collections import defaultdict
 
+from torch.utils.data.sampler import (Sampler)
+from collections import defaultdict
 import numpy as np
 import torch
-from torch.utils.data.sampler import (Sampler)
 
 class RandomIdentitySampler(Sampler):
     def __init__(self, data_source, num_instances=1):

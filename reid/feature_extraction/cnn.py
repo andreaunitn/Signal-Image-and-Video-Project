@@ -1,8 +1,7 @@
 from __future__ import absolute_import
-from collections import OrderedDict
 
+from collections import OrderedDict
 import torch
-from torch.autograd import Variable
 
 from ..utils import to_torch
 

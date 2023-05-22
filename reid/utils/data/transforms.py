@@ -25,9 +25,7 @@ class RandomSizedRectCrop(object):
         self.width = width
         self.interpolation = interpolation
 
-    def __call__(self, img):
-
-        doResize = True
+    def __call__(self, img, doResize=True):
 
         # Resize
         img = img.resize((self.width, self.height), self.interpolation)
@@ -46,7 +44,7 @@ class RandomSizedRectCrop(object):
 
             area = img.size[0] * img.size[1]
 
-            if(doResize):
+            if doResize:
                 target_area = 128*256
                 aspect_ratio = 2
             else: 
@@ -71,7 +69,6 @@ class RandomSizedRectCrop(object):
 
 # -----------------------------
 # Trick 2: Random Erasing Augmentation
-
 class RandomErasingAugmentation(object):
     def __init__(self, height, width, interpolation = Image.BILINEAR):
         self.height = height
@@ -99,7 +96,7 @@ class RandomErasingAugmentation(object):
                 x_e = random.randint(0, img.size()[1] - H_e)
                 y_e = random.randint(0, img.size()[2] - W_e)
 
-                mean=(0.4914, 0.4822, 0.4465)
+                mean = (0.4914, 0.4822, 0.4465)
 
                 if img.size()[0] == 3:
                     img[0, x_e:x_e + H_e, y_e:y_e + W_e] = mean[0]

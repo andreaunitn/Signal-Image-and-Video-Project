@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
-import h5py
-import numpy as np
 from torch.utils.data import Dataset
+import numpy as np
+import h5py
 
 
 class FeatureDatabase(Dataset):

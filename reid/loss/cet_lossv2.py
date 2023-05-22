@@ -4,7 +4,6 @@ import torch
 
 # ------------------------------------
 # Trick 3: Label Smoothing
-
 class IDLoss(torch.nn.Module):
     def __init__(self, num_classes, epsilon=0):
         super(IDLoss, self).__init__()
@@ -40,8 +39,6 @@ class CETLossV2(torch.nn.Module):
         cross_entropy_loss = self.cross_entropy(logits, target)
         triplet_loss, _ = self.triplet(features, target)
         loss = cross_entropy_loss + triplet_loss
-        #loss = cross_entropy_loss
         
         return loss
-    
     # ------------------------------------
