@@ -1,8 +1,8 @@
 from __future__ import absolute_import
 
-import torch
-from torch import nn
 from torch.autograd import Variable
+from torch import nn
+import torch
 
 def normalize(x, axis=-1):
     x = 1. * x / (torch.norm(x, 2, axis, keepdim=True).expand_as(x) + 1e-12)
