@@ -73,7 +73,7 @@ class Trainer(BaseTrainer):
         return inputs, targets
 
     def _forward(self, inputs, targets):
-        features, logits = self.model(*inputs)
+        features, _, logits = self.model(*inputs)
         if isinstance(self.criterion, torch.nn.CrossEntropyLoss):
             loss = self.criterion(logits, targets)
             prec, = accuracy(logits.data, targets.data)

@@ -105,10 +105,19 @@ def main(args):
         last_stride_value = 2
     else:
         last_stride_value = 1
+    # -----------------------------
+    
+    # -----------------------------
+    # Trick 5: BNNeck
+    if args.t < 5:
+        norm = False
+    else:
+        norm = True
+        args.dist_metric = "cosine"
+    # -----------------------------
 
     # Create model
-    model = models.create(args.arch, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value)
-    # -----------------------------
+    model = models.create(args.arch, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value, norm=norm)
 
     # Load from checkpoint
     start_epoch = best_top1 = 0
@@ -135,9 +144,9 @@ def main(args):
     if args.evaluate:
         metric.train(model, train_loader)
         print("Validation:")
-        evaluator.evaluate(val_loader, dataset.val, dataset.val, metric)
+        evaluator.evaluate(val_loader, dataset.val, dataset.val, metric, norm=norm)
         print("Test:")
-        evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric)
+        evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric, norm=norm)
         return
 
     # -----------------------------
@@ -198,7 +207,7 @@ def main(args):
         if epoch < args.start_save:
             continue
         
-        top1 = evaluator.evaluate(val_loader, dataset.val, dataset.val)
+        top1 = evaluator.evaluate(val_loader, dataset.val, dataset.val, norm=norm)
 
         is_best = top1 > best_top1
         best_top1 = max(top1, best_top1)
@@ -215,7 +224,7 @@ def main(args):
     checkpoint = load_checkpoint(osp.join(args.logs_dir, 'model_best.pth.tar'))
     model.module.load_state_dict(checkpoint['state_dict'])
     metric.train(model, train_loader)
-    evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric)
+    evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric, norm=norm)
 
 
 if __name__ == '__main__':

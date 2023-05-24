@@ -6,13 +6,16 @@ import torch
 from ..utils import to_torch
 
 
-def extract_cnn_feature(model, inputs, modules=None):
+def extract_cnn_feature(model, inputs, modules=None, norm=False):
     model.eval()
     inputs = to_torch(inputs)
 
     with torch.no_grad():
         if modules is None:
-            outputs, _ = model(inputs)
+            if not norm:
+                outputs, _, _ = model(inputs)
+            else:
+                _, outputs, _ = model(inputs)
             outputs = outputs.data.cpu()
             return outputs
         # Register forward hook for each module

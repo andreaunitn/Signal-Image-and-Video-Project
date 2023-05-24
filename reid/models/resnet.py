@@ -19,7 +19,7 @@ class ResNet(nn.Module):
     }
 
     def __init__(self, depth, weights=None, cut_at_pooling=False,
-                 num_features=0, dropout=0, num_classes=0, last_stride=2):
+                 num_features=0, dropout=0, num_classes=0, last_stride=2, norm=False):
 
         if depth == 18:
             weights = ResNet18_Weights.IMAGENET1K_V1
@@ -54,6 +54,7 @@ class ResNet(nn.Module):
             self.num_features = num_features
             self.dropout = dropout
             self.num_classes = num_classes
+            self.norm = norm
 
             out_planes = self.base.fc.in_features
             
@@ -64,7 +65,14 @@ class ResNet(nn.Module):
                 self.drop = nn.Dropout(self.dropout)
 
             if self.num_classes > 0:
-                self.classifier = nn.Linear(self.num_features, self.num_classes)
+
+                if self.norm:
+                    self.batch_norm = nn.BatchNorm1d(self.num_features)
+                    self.classifier = nn.Linear(self.num_features, self.num_classes, bias=False)
+                    init.kaiming_normal_(self.classifier.weight, mode='fan_out')
+
+                else:
+                    self.classifier = nn.Linear(self.num_features, self.num_classes)
 
         if self.weights is None:
             self.reset_params()
@@ -82,13 +90,18 @@ class ResNet(nn.Module):
         x = x.view(x.size(0), -1)
         y = x.clone()
 
+        if self.norm:
+            x = self.batch_norm(x)
+        
+        z = x.clone()
+
         if self.dropout > 0:
             x = self.drop(x)
 
         if self.num_classes > 0:
             x = self.classifier(x)
 
-        return y, x
+        return y, z, x
 
     def reset_params(self):
         for m in self.modules():

@@ -4,10 +4,12 @@ from metric_learn import (ITML_Supervised, LMNN, LSML_Supervised,
                           SDML_Supervised, NCA, LFDA, RCA_Supervised)
 
 from .euclidean import Euclidean
+from .cosine import Cosine
 from .kissme import KISSME
 
 __factory = {
     'euclidean': Euclidean,
+    'cosine': Cosine,
     'kissme': KISSME,
     'itml': ITML_Supervised,
     'lmnn': LMNN,
