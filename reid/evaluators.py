@@ -42,7 +42,6 @@ def extract_features(model, data_loader, print_freq=1, metric=None, norm=False):
 
 
 def pairwise_distance(features, query=None, gallery=None, metric=None):
-
     useEuclidean = False
 
     if metric is None:
@@ -64,8 +63,6 @@ def pairwise_distance(features, query=None, gallery=None, metric=None):
         m, n = x.size(0), y.size(0)
         x = x.view(m, -1)
         y = y.view(n, -1)
-
-        
         if metric is not None:
             x = metric.transform(x)
             y = metric.transform(y)
@@ -73,7 +70,6 @@ def pairwise_distance(features, query=None, gallery=None, metric=None):
             torch.pow(y, 2).sum(dim=1, keepdim=True).expand(n, m).t()
         dist.addmm_(x, y.t(), beta=1, alpha=-2)
         return dist
-    
     else:
         if query is None and gallery is None:
             n = len(features)
@@ -81,10 +77,10 @@ def pairwise_distance(features, query=None, gallery=None, metric=None):
             x = x.view(n, -1)
             if metric is not None:
                 x = metric.transform(x)
-            dist = torch.zeros(n, n)
-            for i in range(n):
-                for j in range(n):
-                    dist[i, j] = cosine(x[i], x[j])
+            x_norm = x.norm(dim=1, keepdim=True)
+            x_normalized = x.div(x_norm)
+            dist = torch.mm(x_normalized, x_normalized.t())
+            dist = 1 - dist
             return dist
 
         x = torch.cat([features[f].unsqueeze(0) for f, _, _ in query], 0)
@@ -95,12 +91,14 @@ def pairwise_distance(features, query=None, gallery=None, metric=None):
         if metric is not None:
             x = metric.transform(x)
             y = metric.transform(y)
-        dist = torch.zeros(m, n)
-        for i in range(m):
-            for j in range(n):
-                dist[i, j] = cosine(x[i], y[j])
-                
+        x_norm = x.norm(dim=1, keepdim=True)
+        y_norm = y.norm(dim=1, keepdim=True)
+        x_normalized = x.div(x_norm)
+        y_normalized = y.div(y_norm)
+        dist = torch.mm(x_normalized, y_normalized.t())
+        dist = 1 - dist
         return dist
+
 
 def evaluate_all(distmat, query=None, gallery=None,
                  query_ids=None, gallery_ids=None,
@@ -125,7 +123,7 @@ def evaluate_all(distmat, query=None, gallery=None,
         'allshots': dict(separate_camera_set=False,
                          single_gallery_shot=False,
                          first_match_break=False),
-        'dukemtmc': dict(separate_camera_set=True,
+        'cuhk03': dict(separate_camera_set=True,
                        single_gallery_shot=True,
                        first_match_break=False),
         'market1501': dict(separate_camera_set=False,
@@ -136,11 +134,11 @@ def evaluate_all(distmat, query=None, gallery=None,
                   for name, params in cmc_configs.items()}
 
     print('CMC Scores{:>12}{:>12}{:>12}'
-          .format('allshots', 'dukemtmc', 'market1501'))
+          .format('allshots', 'cuhk03', 'market1501'))
     for k in cmc_topk:
         print('  top-{:<4}{:12.1%}{:12.1%}{:12.1%}'
               .format(k, cmc_scores['allshots'][k - 1],
-                      cmc_scores['dukemtmc'][k - 1],
+                      cmc_scores['cuhk03'][k - 1],
                       cmc_scores['market1501'][k - 1]))
 
     # Use the allshots cmc top-1 score for validation criterion

@@ -14,6 +14,7 @@ def main(args):
 
     # command to execute triplet loss
     command = "python triplet_loss.py -d {} -b {} -t {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {} --combine-trainval".format(dataset, batch_size, trick_number, k, logs_dir, epochs)
+    #command = "python triplet_loss.py -d {} -b {} -t {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {} --combine-trainval --evaluate --resume logs/model_best.pth.tar".format(dataset, batch_size, trick_number, k, logs_dir, epochs)
     subprocess.run(command, shell = True)
 
 if __name__ == "__main__":

@@ -108,7 +108,7 @@ def main(args):
     # -----------------------------
     
     # -----------------------------
-    # Trick 5: BNNeck
+    # trick 5: bnneck
     if args.t < 5:
         norm = False
     else:
