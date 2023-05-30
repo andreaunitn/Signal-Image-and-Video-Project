@@ -4,7 +4,7 @@ from torch.autograd import Variable
 import torch
 import time
 
-from .loss import TripletLoss, CETLossV2
+from .loss import TripletLoss, CETLossV2, CETCTLoss
 from .evaluation_metrics import accuracy
 from .utils.meters import AverageMeter
 
@@ -81,6 +81,10 @@ class Trainer(BaseTrainer):
         elif isinstance(self.criterion, TripletLoss):
             loss, prec = self.criterion(features, targets)
         elif isinstance(self.criterion, CETLossV2):
+            loss = self.criterion(features, logits, targets)
+            prec, = accuracy(logits.data, targets.data)
+            prec = prec[0]
+        elif isinstance(self.criterion, CETCTLoss):
             loss = self.criterion(features, logits, targets)
             prec, = accuracy(logits.data, targets.data)
             prec = prec[0]

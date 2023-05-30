@@ -14,10 +14,10 @@ from reid.utils.data.sampler import RandomIdentitySampler
 from reid.utils.data.preprocessor import Preprocessor
 from reid.utils.data import transforms as T
 from reid.dist_metric import DistanceMetric
+from reid.loss import CETLossV2, CETCTLoss
 from reid.evaluators import Evaluator
 from reid.utils.logging import Logger
 from reid.trainers import Trainer
-from reid.loss import CETLossV2
 from reid import datasets
 from reid import models
 
@@ -107,14 +107,15 @@ def main(args):
         last_stride_value = 1
     # -----------------------------
     
-    # -----------------------------
-    # trick 5: bnneck
-    if args.t < 5:
-        norm = False
-    else:
-        norm = True
-        args.dist_metric = "cosine"
-    # -----------------------------
+    norm = False
+    # # -----------------------------
+    # # Trick 5: BNNeck
+    # if args.t < 5:
+    #     norm = False
+    # else:
+    #     norm = True
+    #     args.dist_metric = "cosine"
+    # # -----------------------------
 
     # Create model
     model = models.create(args.arch, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value, norm=norm)
@@ -158,13 +159,20 @@ def main(args):
             criterion = CETLossV2(num_classes, margin=args.margin).to(mps_device)
         else:
             criterion = CETLossV2(num_classes, margin=args.margin).cuda()
-    else:
+    elif 3 <= args.t <= 5:
         # Criterion
         if torch.backends.mps.is_available():
             mps_device = torch.device("mps")
             criterion = CETLossV2(num_classes, margin=args.margin, e=0.1).to(mps_device)
         else:
             criterion = CETLossV2(num_classes, margin=args.margin, e=0.1).cuda()
+    else:
+        # Criterion
+        if torch.backends.mps.is_available():
+            mps_device = torch.device("mps")
+            criterion = CETCTLoss(num_classes, feat_dim=2048, margin=args.margin, e=0.1).to(mps_device)
+        else:
+            criterion = CETCTLoss(num_classes, feat_dim=2048, margin=args.margin, e=0.1).cuda()
     # -----------------------------
 
     # Optimizer
