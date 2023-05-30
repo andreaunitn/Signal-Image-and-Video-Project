@@ -107,14 +107,15 @@ def main(args):
         last_stride_value = 1
     # -----------------------------
     
-    # -----------------------------
-    # Trick 5: BNNeck
-    if args.t < 5:
-        norm = False
-    else:
-        norm = True
-        args.dist_metric = "cosine"
-    # -----------------------------
+    norm = False
+    # # -----------------------------
+    # # Trick 5: BNNeck
+    # if args.t < 5:
+    #     norm = False
+    # else:
+    #     norm = True
+    #     args.dist_metric = "cosine"
+    # # -----------------------------
 
     # Create model
     model = models.create(args.arch, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value, norm=norm)
