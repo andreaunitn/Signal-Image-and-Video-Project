@@ -207,6 +207,14 @@ def main(args):
             g['lr'] = lr * g.get('lr_mult', 1)
     # -----------------------------
 
+    # -----------------------------
+    # Re-ranking
+    if args.re_ranking:
+        re_ranking = True
+    else:
+        re_ranking = False
+    # -----------------------------
+
     # Start training
     for epoch in range(start_epoch + 1, args.epochs + 1):
         adjust_lr(epoch)
@@ -215,7 +223,7 @@ def main(args):
         if epoch < args.start_save:
             continue
         
-        top1 = evaluator.evaluate(val_loader, dataset.val, dataset.val, norm=norm)
+        top1 = evaluator.evaluate(val_loader, dataset.val, dataset.val, norm=norm, re_ranking=re_ranking)
 
         is_best = top1 > best_top1
         best_top1 = max(top1, best_top1)
@@ -232,7 +240,7 @@ def main(args):
     checkpoint = load_checkpoint(osp.join(args.logs_dir, 'model_best.pth.tar'))
     model.module.load_state_dict(checkpoint['state_dict'])
     metric.train(model, train_loader)
-    evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric, norm=norm)
+    evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric, norm=norm, re_ranking=re_ranking)
 
 
 if __name__ == '__main__':

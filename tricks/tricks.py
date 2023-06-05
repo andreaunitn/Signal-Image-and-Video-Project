@@ -12,8 +12,10 @@ def main(args):
     epochs = args.epochs
     logs_dir = args.logs_dir
 
+    re_ranking = args.re_ranking
+
     # command to execute triplet loss
-    command = "python triplet_loss.py -d {} -b {} -t {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {} --combine-trainval".format(dataset, batch_size, trick_number, k, logs_dir, epochs)
+    command = "python triplet_loss.py -d {} -b {} -t {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {} --combine-trainval --re_ranking {}".format(dataset, batch_size, trick_number, k, logs_dir, epochs, re_ranking)
     #command = "python triplet_loss.py -d {} -b {} -t {} --num-instances {} -j 2 -a resnet50 --logs-dir {} --epochs {} --combine-trainval --evaluate --resume logs/model_best.pth.tar".format(dataset, batch_size, trick_number, k, logs_dir, epochs)
     subprocess.run(command, shell = True)
 
@@ -34,6 +36,9 @@ if __name__ == "__main__":
 
     # number of epochs
     parser.add_argument("--epochs", type = int, default = 120, help = "number of epochs")
+
+    # re-ranking
+    parser.add_argument("--re_ranking", type = bool, default = False, help="apply re-ranking")
 
     # logs file
     working_dir = osp.dirname(osp.abspath(__file__))

@@ -2,12 +2,59 @@ from __future__ import print_function, absolute_import
 
 from scipy.spatial.distance import cosine
 from collections import OrderedDict
+import numpy as np
 import torch
 import time
 
 from .feature_extraction import extract_cnn_feature
 from .evaluation_metrics import cmc, mean_ap
 from .utils.meters import AverageMeter
+
+def compute_k_reciprocal_neighbors(similarity_matrix, k1, k2):
+    # Compute the k-reciprocal neighbors
+    similarity_matrix = similarity_matrix.numpy()
+    k_reciprocal_matrix = np.zeros_like(similarity_matrix)
+
+    for i in range(similarity_matrix.shape[0]):
+        sample_indices = np.argsort(similarity_matrix[i])[::-1]
+        for j in range(k1):
+            target_indices = np.argsort(similarity_matrix[sample_indices[j]])[::-1]
+            mutual_match_indices = np.where(target_indices == i)[0]
+            if mutual_match_indices.size > 0:
+                k_reciprocal_matrix[i, sample_indices[j]] = mutual_match_indices[0]
+            else:
+                k_reciprocal_matrix[i, sample_indices[j]] = -1
+
+        for j in range(k1, k1 + k2):
+            target_indices = np.argsort(similarity_matrix[sample_indices[j]])[::-1]
+            mutual_match_indices = np.where(target_indices == i)[0]
+            if mutual_match_indices.size > 0:
+                k_reciprocal_matrix[i, sample_indices[j]] = mutual_match_indices[0]
+            else:
+                k_reciprocal_matrix[i, sample_indices[j]] = -1
+
+    return k_reciprocal_matrix
+
+
+def re_rank(similarity_matrix, k_reciprocal_matrix, lambda_value):
+    # Perform re-ranking using k-reciprocal encoding
+    similarity_matrix = similarity_matrix.numpy()
+    k_reciprocal_matrix = k_reciprocal_matrix.astype(np.int64)
+    lambda_value = float(lambda_value)
+
+    for i in range(similarity_matrix.shape[0]):
+        initial_rank = similarity_matrix[i].argsort()[::-1]
+        common_neighbors = np.where(k_reciprocal_matrix[i] != -1)[0]
+
+        for j in range(similarity_matrix.shape[1]):
+            if j in common_neighbors:
+                similarity_matrix[i, j] = (1 - lambda_value) * similarity_matrix[i, j] + lambda_value * similarity_matrix[j, j]
+            else:
+                similarity_matrix[i, j] = similarity_matrix[i, j]
+
+        similarity_matrix[i] = similarity_matrix[i] / np.max(similarity_matrix[i])
+
+    return torch.from_numpy(similarity_matrix)
 
 
 def extract_features(model, data_loader, print_freq=1, metric=None, norm=False):
@@ -150,7 +197,18 @@ class Evaluator(object):
         super(Evaluator, self).__init__()
         self.model = model
 
-    def evaluate(self, data_loader, query, gallery, metric=None, norm=False):
+    def evaluate(self, data_loader, query, gallery, metric=None, norm=False, re_ranking=False):
         features, _ = extract_features(self.model, data_loader, norm=norm)
         distmat = pairwise_distance(features, query, gallery, metric=metric)
-        return evaluate_all(distmat, query=query, gallery=gallery)
+
+        if re_ranking:
+            k1 = 20
+            k2 = 6
+            lambda_value = 0.3
+
+            k_reciprocal_matrix = compute_k_reciprocal_neighbors(distmat, k1, k2)
+            re_ranked_similarity_matrix = re_rank(distmat, k_reciprocal_matrix, lambda_value)
+
+            return evaluate_all(re_ranked_similarity_matrix, query=query, gallery=gallery)
+        else:
+            return evaluate_all(distmat, query=query, gallery=gallery)
