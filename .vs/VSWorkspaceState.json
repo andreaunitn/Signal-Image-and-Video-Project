@@ -9,6 +9,6 @@
     "\\reid\\utils\\data",
     "\\tricks"
   ],
-  "SelectedNode": "\\tricks\\triplet_loss.py",
+  "SelectedNode": "\\reid\\loss\\triplet.py",
   "PreviewInSolutionExplorer": false
 }
