@@ -65,7 +65,7 @@ class TripletLoss(nn.Module):
         self.margin = margin
         self.ranking_loss = nn.MarginRankingLoss(margin=margin)
 
-    def forward(self, global_feat, labels, normalize_feature=True):
+    def forward(self, global_feat, labels, normalize_feature=False):
         if normalize_feature:
             global_feat = normalize(global_feat, axis=-1)
         dist_mat = euclidean_dist(global_feat, global_feat)

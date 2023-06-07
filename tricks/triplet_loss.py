@@ -107,15 +107,14 @@ def main(args):
         last_stride_value = 1
     # -----------------------------
     
-    norm = False
-    # # -----------------------------
-    # # Trick 5: BNNeck
-    # if args.t < 5:
-    #     norm = False
-    # else:
-    #     norm = True
-    #     args.dist_metric = "cosine"
-    # # -----------------------------
+    # -----------------------------
+    # Trick 5: BNNeck
+    if args.t < 5:
+        norm = False
+    else:
+        norm = True
+        args.dist_metric = "cosine"
+    # -----------------------------
 
     # Create model
     model = models.create(args.arch, dropout=args.dropout, num_classes=num_classes, last_stride=last_stride_value, norm=norm)
@@ -139,15 +138,23 @@ def main(args):
     # Distance metric
     metric = DistanceMetric(algorithm=args.dist_metric)
 
+    # -----------------------------
+    # Re-ranking
+    if args.re_ranking:
+        re_ranking = True
+    else:
+        re_ranking = False
+    # -----------------------------
+
     # Evaluator
     evaluator = Evaluator(model)
 
     if args.evaluate:
         metric.train(model, train_loader)
         print("Validation:")
-        evaluator.evaluate(val_loader, dataset.val, dataset.val, metric, norm=norm)
+        evaluator.evaluate(val_loader, dataset.val, dataset.val, metric, norm=norm, re_ranking=re_ranking)
         print("Test:")
-        evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric, norm=norm)
+        evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric, norm=norm, re_ranking=re_ranking)
         return
 
     # -----------------------------
@@ -205,14 +212,6 @@ def main(args):
         
         for g in optimizer.param_groups:
             g['lr'] = lr * g.get('lr_mult', 1)
-    # -----------------------------
-
-    # -----------------------------
-    # Re-ranking
-    if args.re_ranking:
-        re_ranking = True
-    else:
-        re_ranking = False
     # -----------------------------
 
     # Start training
@@ -284,6 +283,9 @@ if __name__ == '__main__':
     working_dir = osp.dirname(osp.abspath(__file__))
     parser.add_argument('--data-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'data'))
     parser.add_argument('--logs-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'logs'))
+
+    # re-ranking
+    parser.add_argument("--re_ranking", type=bool, default=False)
 
     # trick number
     parser.add_argument('-t', type=int, default=0)
