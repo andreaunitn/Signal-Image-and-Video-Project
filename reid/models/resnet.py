@@ -90,11 +90,14 @@ class ResNet(nn.Module):
 
                 if self.norm:
                     self.batch_norm = nn.BatchNorm1d(self.num_features)
-                    self.batch_norm.requires_grad_(False)
-                    self.classifier = nn.Linear(self.num_features, self.num_classes)
-                    nn.init.kaiming_normal_(self.classifier.weight, a=0, mode='fan_in')
                     nn.init.constant_(self.batch_norm.weight, 1.0)
                     nn.init.constant_(self.batch_norm.bias, 0.0)
+                    self.classifier = nn.Linear(self.num_features, self.num_classes)
+                    nn.init.normal_(self.classifier.weight, std=0.001)
+                    nn.init.constant_(self.classifier.bias, 0.0)
+                    #nn.init.kaiming_normal_(self.classifier.weight, a=0, mode='fan_out')
+                    #nn.init.constant_(self.batch_norm.weight, 1.0)
+                    #nn.init.constant_(self.batch_norm.bias, 0.0)
 
                     #self.batch_norm.apply(weights_init_kaiming)
                     #self.classifier.apply(weights_init_classifier)
@@ -118,8 +121,8 @@ class ResNet(nn.Module):
         x = x.view(x.size(0), -1)
         y = x.clone()
 
-        #if self.norm:
-            #x = self.batch_norm(x)
+        if self.norm:
+            x = self.batch_norm(x)
         
         z = x.clone()
 
