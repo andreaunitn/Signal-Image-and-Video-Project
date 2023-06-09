@@ -285,7 +285,7 @@ if __name__ == '__main__':
     parser.add_argument('--logs-dir', type=str, metavar='PATH', default=osp.join(working_dir, 'logs'))
 
     # re-ranking
-    parser.add_argument("--re_ranking", type=bool, default=False)
+    parser.add_argument("--re_ranking", action='store_true', help='use re-ranking method')
 
     # trick number
     parser.add_argument('-t', type=int, default=0)

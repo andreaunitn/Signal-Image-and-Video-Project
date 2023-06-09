@@ -2,6 +2,8 @@
   "ExpandedNodes": [
     "",
     "\\reid",
+    "\\reid\\datasets",
+    "\\reid\\evaluation_metrics",
     "\\reid\\loss",
     "\\reid\\metric_learning",
     "\\reid\\models",
@@ -9,6 +11,6 @@
     "\\reid\\utils\\data",
     "\\tricks"
   ],
-  "SelectedNode": "\\reid\\loss\\triplet.py",
+  "SelectedNode": "\\reid\\models\\resnet.py",
   "PreviewInSolutionExplorer": false
 }

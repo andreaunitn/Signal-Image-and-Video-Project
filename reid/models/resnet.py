@@ -6,29 +6,6 @@ from torch.nn import functional as F
 from torch.nn import init
 from torch import nn
 
-def weights_init_kaiming(m):
-    classname = m.__class__.__name__
-    if classname.find('Linear') != -1:
-        nn.init.kaiming_normal_(m.weight, a=0, mode='fan_out')
-        nn.init.constant_(m.bias, 0.0)
-    elif classname.find('Conv') != -1:
-        nn.init.kaiming_normal_(m.weight, a=0, mode='fan_in')
-        if m.bias is not None:
-            nn.init.constant_(m.bias, 0.0)
-    elif classname.find('BatchNorm') != -1:
-        if m.affine:
-            nn.init.constant_(m.weight, 1.0)
-            nn.init.constant_(m.bias, 0.0)
-
-
-def weights_init_classifier(m):
-    classname = m.__class__.__name__
-    if classname.find('Linear') != -1:
-        nn.init.normal_(m.weight, std=0.001)
-        if m.bias:
-            nn.init.constant_(m.bias, 0.0)
-
-
 __all__ = ['ResNet', 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152']
 
 class ResNet(nn.Module):
@@ -92,16 +69,10 @@ class ResNet(nn.Module):
                     self.batch_norm = nn.BatchNorm1d(self.num_features)
                     nn.init.constant_(self.batch_norm.weight, 1.0)
                     nn.init.constant_(self.batch_norm.bias, 0.0)
-                    self.classifier = nn.Linear(self.num_features, self.num_classes)
-                    nn.init.normal_(self.classifier.weight, std=0.001)
-                    nn.init.constant_(self.classifier.bias, 0.0)
-                    #nn.init.kaiming_normal_(self.classifier.weight, a=0, mode='fan_out')
-                    #nn.init.constant_(self.batch_norm.weight, 1.0)
-                    #nn.init.constant_(self.batch_norm.bias, 0.0)
 
-                    #self.batch_norm.apply(weights_init_kaiming)
-                    #self.classifier.apply(weights_init_classifier)
-                    #init.kaiming_normal_(self.classifier.weight, mode='fan_out')
+                    self.classifier = nn.Linear(self.num_features, self.num_classes, bias=False)
+                    nn.init.normal_(self.classifier.weight, std=0.001)
+                    #nn.init.constant_(self.classifier.bias, 0.0)
                 else:
                     self.classifier = nn.Linear(self.num_features, self.num_classes)
 
