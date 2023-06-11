@@ -45,21 +45,6 @@ class CETLossV2(torch.nn.Module):
 
 # ------------------------------------
 # Trick 6: Center Loss
-#class CenterLoss(torch.nn.Module):
-#    def __init__(self, num_classes, feat_dim):
-#        super(CenterLoss, self).__init__()
-#        self.num_classes = num_classes
-#        self.feat_dim = feat_dim
-#        self.centers = torch.nn.Parameter(torch.randn(num_classes, feat_dim))
-
-#    def forward(self, features, targets):
-#        batch_size = features.size(0)
-#        features = features.view(batch_size, -1)
-#        targets = targets.view(-1)
-#        centers_batch = self.centers[targets]
-#        loss = torch.sum((features - centers_batch) ** 2) / 2.0 / batch_size
-#        return loss
-
 class CenterLoss(torch.nn.Module):
     def __init__(self, num_classes, feat_dim):
         super(CenterLoss, self).__init__()
@@ -71,19 +56,19 @@ class CenterLoss(torch.nn.Module):
         batch_size = features.size(0)
         features = features.view(batch_size, -1)
         
-        centers_batch = self.centers[labels]  # Select centers for each sample
+        # Select centers for each sample
+        centers_batch = self.centers[labels]
         
         # Compute center loss
         loss = torch.sum(torch.pow(features - centers_batch, 2)) / 2.0 / batch_size
         
         # Update centers
         diff = centers_batch - features
-        unique_labels, label_count = torch.unique(labels, return_counts=True)
         centers_update = torch.zeros_like(self.centers)
         centers_update.scatter_add_(0, labels.unsqueeze(1).repeat(1, self.feat_dim), diff)
         centers_count = torch.zeros_like(self.centers)
         centers_count.scatter_add_(0, labels.unsqueeze(1).repeat(1, self.feat_dim), torch.ones_like(features))
-        centers_update /= (centers_count + 1)  # Add 1 to avoid division by zero
+        centers_update /= (centers_count + 1)
         self.centers.data -= centers_update
         
         return loss

@@ -152,9 +152,9 @@ def main(args):
     if args.evaluate:
         metric.train(model, train_loader)
         print("Validation:")
-        evaluator.evaluate(val_loader, dataset.val, dataset.val, metric, norm=norm, re_ranking=re_ranking)
+        evaluator.evaluate(val_loader, dataset.val, dataset.val, args.dataset, metric, norm=norm, re_ranking=re_ranking)
         print("Test:")
-        evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric, norm=norm, re_ranking=re_ranking)
+        evaluator.evaluate(test_loader, dataset.query, dataset.gallery, args.dataset, metric, norm=norm, re_ranking=re_ranking)
         return
 
     # -----------------------------
@@ -215,14 +215,14 @@ def main(args):
     # -----------------------------
 
     # Start training
-    for epoch in range(start_epoch + 1, args.epochs + 1):
+    for epoch in range(start_epoch, args.epochs):
         adjust_lr(epoch)
         trainer.train(epoch, train_loader, optimizer)
         
         if epoch < args.start_save:
             continue
         
-        top1 = evaluator.evaluate(val_loader, dataset.val, dataset.val, norm=norm, re_ranking=re_ranking)
+        top1 = evaluator.evaluate(val_loader, dataset.val, dataset.val, args.dataset, norm=norm, re_ranking=re_ranking)
 
         is_best = top1 > best_top1
         best_top1 = max(top1, best_top1)
@@ -232,6 +232,7 @@ def main(args):
             'best_top1': best_top1,
         }, is_best, fpath=osp.join(args.logs_dir, 'checkpoint.pth.tar'))
 
+        # TODO: change this print
         print('\n * Finished epoch {:3d}  top1: {:5.1%}  best: {:5.1%}{}\n'.format(epoch, top1, best_top1, ' *' if is_best else ''))
 
     # Final test
@@ -239,7 +240,7 @@ def main(args):
     checkpoint = load_checkpoint(osp.join(args.logs_dir, 'model_best.pth.tar'))
     model.module.load_state_dict(checkpoint['state_dict'])
     metric.train(model, train_loader)
-    evaluator.evaluate(test_loader, dataset.query, dataset.gallery, metric, norm=norm, re_ranking=re_ranking)
+    evaluator.evaluate(test_loader, dataset.query, dataset.gallery, args.dataset, metric, norm=norm, re_ranking=re_ranking)
 
 
 if __name__ == '__main__':
