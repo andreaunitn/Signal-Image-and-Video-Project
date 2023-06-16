@@ -152,7 +152,7 @@ def main(args):
     if args.evaluate:
         metric.train(model, train_loader)
         print("Validation:")
-        evaluator.evaluate(val_loader, dataset.val, dataset.val, args.dataset, metric, norm=norm, re_ranking=re_ranking)
+        evaluator.evaluate(val_loader, dataset.val, dataset.val, args.dataset, metric, norm=norm, re_ranking=False)
         print("Test:")
         evaluator.evaluate(test_loader, dataset.query, dataset.gallery, args.dataset, metric, norm=norm, re_ranking=re_ranking)
         return
@@ -222,7 +222,7 @@ def main(args):
         if epoch < args.start_save:
             continue
         
-        top1 = evaluator.evaluate(val_loader, dataset.val, dataset.val, args.dataset, norm=norm, re_ranking=re_ranking)
+        top1 = evaluator.evaluate(val_loader, dataset.val, dataset.val, args.dataset, norm=norm, re_ranking=False)
 
         is_best = top1 > best_top1
         best_top1 = max(top1, best_top1)
