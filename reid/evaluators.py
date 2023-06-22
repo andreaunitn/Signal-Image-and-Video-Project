@@ -1,6 +1,6 @@
 from __future__ import print_function, absolute_import
 
-from scipy.spatial.distance import cosine
+from scipy.spatial.distance import cdist
 from collections import OrderedDict
 import numpy as np
 import torch
@@ -10,65 +10,138 @@ from .feature_extraction import extract_cnn_feature
 from .evaluation_metrics import cmc, mean_ap
 from .utils.meters import AverageMeter
 
-def compute_mutual_knn(initial_ranking, k1=20, k2=6):
-    num_queries, num_gallery = initial_ranking.shape
-    mnn_indices = np.zeros((num_queries, k2), dtype=int)
+# def compute_mahalanobis_dist(distmat):
 
-    for i in range(num_queries):
-        mnn = []
-        mnn_set = set()
-        mnn_candidates = initial_ranking[i, :k1].tolist()
+#     if torch.backends.mps.is_available():
+#         mps_device = torch.device("mps")
+#         distmat_tensor = torch.tensor(distmat, dtype=torch.float32).to(mps_device)
+#     else:
+#         distmat_tensor = torch.tensor(distmat, dtype=torch.float32).cuda()
 
-        while len(mnn) < k2:
-            if len(mnn_candidates) == 0:
-                break
+#     mean_vector = torch.mean(distmat_tensor, dim=0)
+#     centered_distmat = distmat_tensor - mean_vector
+#     covariance_matrix = np.cov(centered_distmat.cpu().numpy(), rowvar=False)
+#     inv_cov_matrix = np.linalg.inv(covariance_matrix)
 
-            candidate = mnn_candidates.pop(0)
-            if candidate >= num_gallery:
-                continue
+#     #mahalanobis_dist_matrix = np.zeros_like(distmat)
+#     #mahalanobis_dist_1d = mahalanobis_dist_matrix.view(-1).cpu().numpy()
+#     # Reshape the input matrices to 2-dimensional arrays
+#     distmat_2d = distmat_tensor.cpu().numpy()
+    
+#     mahalanobis_dist_matrix = cdist(distmat_2d, distmat_2d, metric='mahalanobis', VI=inv_cov_matrix)
 
-            if candidate not in mnn_set:
-                mnn.append(candidate)
-                mnn_set.add(candidate)
+#     return mahalanobis_dist_matrix
 
-                if candidate < num_queries:
-                    mnn_candidates.extend(initial_ranking[candidate, :k1])
 
-        mnn_indices[i] = np.array(mnn[:k2])
+def k_reciprocal_re_ranking(dist_matrix, k1=20, k2=6, lambda_value=0.3, jaccard=True, local_expansion=True):
+    #mahalanobis_dist = compute_mahalanobis_dist(dist_matrix.clone())
+    original_dist = dist_matrix.clone()
+    gallery_num = dist_matrix.shape[0]
+    
+    # Initialize the similarity matrix
+    similarity_matrix = np.zeros_like(dist_matrix, dtype=np.float32)
+    
+    for i in range(gallery_num):
+        # Find the k1 nearest neighbors for the gallery image
+        k1_indices = np.argsort(dist_matrix[i])[:k1]
+        
+        for j, k1_index in enumerate(k1_indices):
+            # Find the k2 nearest neighbors for the k1 nearest neighbor
+            k2_indices = np.argsort(dist_matrix[min(k1_index, gallery_num - 1)])[:k2]
 
-    return mnn_indices
+            
+            # Calculate the reciprocal rank similarity
+            reciprocal_rank_sim = 0.0
+            for k, k2_index in enumerate(k2_indices):
+                if jaccard:
+                    # Jaccard distance
+                    intersection = len(set(k1_indices[:j+1]).intersection(set(k2_indices[:k+1])))
+                    union = len(set(k1_indices[:j+1]).union(set(k2_indices[:k+1])))
+                    jaccard_dist = 1.0 - float(intersection) / union
+                    sim = 1.0 - jaccard_dist
+                else:
+                    # Euclidean distance or other distance metric
+                    sim = 1.0 / (dist_matrix[k1_index, k2_index] + 1.0)
+                
+                reciprocal_rank_sim += sim / (k + 1)
+            
+            # Assign weights to the reciprocal rank similarities
+            similarity_matrix[i, k1_index] += reciprocal_rank_sim * (1.0 - lambda_value) / k2
+            
+        if local_expansion:
+            # Local query expansion
+            expansion_indices = k1_indices[:int(k1/2)]  # Select a subset for expansion
+            for expansion_index in expansion_indices:
+                # Update similarity matrix using local query expansion
+                similarity_matrix[i] += similarity_matrix[expansion_index % gallery_num]
 
-def compute_jaccard_similarity(mnn_indices):
-    num_queries = mnn_indices.shape[0]
-    jaccard_similarity = np.zeros((num_queries, num_queries), dtype=float)
+    
+    # Combine the original distance and re-ranked similarity
+    dist_matrix = lambda_value * original_dist + (1.0 - lambda_value) * similarity_matrix
+    
+    return dist_matrix
 
-    for i in range(num_queries):
-        mnn_i = set(mnn_indices[i])
-        for j in range(num_queries):
-            mnn_j = set(mnn_indices[j])
-            intersection = len(mnn_i.intersection(mnn_j))
-            union = len(mnn_i.union(mnn_j))
-            jaccard_similarity[i, j] = intersection / union
+# def compute_mutual_knn(initial_ranking, k1=20, k2=6):
+#     num_queries, num_gallery = initial_ranking.shape
+#     mnn_indices = np.zeros((num_queries, k2), dtype=int)
 
-    return jaccard_similarity
+#     for i in range(num_queries):
+#         mnn = []
+#         mnn_set = set()
+#         mnn_candidates = initial_ranking[i, :k1].tolist()
 
-def re_rank(initial_ranking, jaccard_similarity, lambda_value=0.3):
-    num_queries = initial_ranking.shape[0]
-    final_ranking = np.zeros_like(initial_ranking)
+#         while len(mnn) < k2:
+#             if len(mnn_candidates) == 0:
+#                 break
 
-    print("before loop")
+#             candidate = mnn_candidates.pop(0)
+#             if candidate >= num_gallery:
+#                 continue
 
-    for i in range(num_queries):
-        initial_rank = initial_ranking[i]
-        jaccard_scores = jaccard_similarity[i]
-        new_rank = (1 - lambda_value) * initial_rank + lambda_value * np.expand_dims(jaccard_scores, axis=1)
-        print("before sorting")
-        sorted_indices = np.argsort(new_rank.T, axis=0)
-        print("after sorting")
-        final_ranking[i] = sorted_indices[:, 0]
+#             if candidate not in mnn_set:
+#                 mnn.append(candidate)
+#                 mnn_set.add(candidate)
 
-    print("loop finished")
-    return final_ranking
+#                 if candidate < num_queries:
+#                     mnn_candidates.extend(initial_ranking[candidate, :k1])
+
+#         mnn_indices[i] = np.array(mnn[:k2])
+
+#     return mnn_indices
+
+# def compute_jaccard_similarity(mnn_indices):
+#     num_queries = mnn_indices.shape[0]
+#     jaccard_similarity = np.zeros((num_queries, num_queries), dtype=float)
+
+#     for i in range(num_queries):
+#         mnn_i = set(mnn_indices[i])
+#         for j in range(num_queries):
+#             mnn_j = set(mnn_indices[j])
+#             intersection = len(mnn_i.intersection(mnn_j))
+#             union = len(mnn_i.union(mnn_j))
+#             jaccard_similarity[i, j] = intersection / union
+
+#     return jaccard_similarity
+
+# def re_rank(initial_ranking, jaccard_similarity, lambda_value=0.3):
+#     num_queries = initial_ranking.shape[0]
+#     final_ranking = np.zeros_like(initial_ranking)
+
+#     print("before loop")
+
+#     for i in range(num_queries):
+#         initial_rank = initial_ranking[i]
+#         jaccard_scores = jaccard_similarity[i]
+#         new_rank = (1 - lambda_value) * initial_rank + lambda_value * np.expand_dims(jaccard_scores, axis=1)
+#         print("before sorting")
+#         k = initial_ranking.shape[1]
+#         partition_indices = np.argpartition(new_rank, k-1)[:k]
+#         sorted_indices = partition_indices[np.argsort(new_rank[partition_indices])]
+#         print("after sorting")
+#         final_ranking[i] = sorted_indices[:, 0]
+
+#     print("loop finished")
+#     return final_ranking
 
 #     num_samples = distances.shape[0]
 #     ranks = np.argsort(distances, axis=1)  # Sort distances to get the indices of nearest neighbors
@@ -337,7 +410,7 @@ def evaluate_all(distmat, dataset, query=None, gallery=None,
     else:
         assert (query_ids is not None and gallery_ids is not None
                 and query_cams is not None and gallery_cams is not None)
-
+        
     # Compute mean AP
     mAP = mean_ap(distmat, query_ids, gallery_ids, query_cams, gallery_cams)
     print('Mean AP: {:4.1%}'.format(mAP))
@@ -357,7 +430,7 @@ def evaluate_all(distmat, dataset, query=None, gallery=None,
 
     print('CMC Scores{:>12}'.format(dataset))
     for k in cmc_topk:
-        print('  top-{:<4}{:12.1%}'.format(k, cmc_scores[dataset][k - 1]))
+        print('  rank-{:<4}{:12.1%}'.format(k, cmc_scores[dataset][k - 1]))
 
     # Use the 'dataset' cmc top-1 score for validation criterion
     return cmc_scores[dataset][0]
@@ -373,10 +446,7 @@ class Evaluator(object):
         distmat = pairwise_distance(features, query, gallery, metric=metric)
 
         if re_ranking:
-            initial_ranking = np.argsort(distmat, axis=1)
-            mnn_indices = compute_mutual_knn(initial_ranking)
-            jaccard_similarity = compute_jaccard_similarity(mnn_indices)
-            final_ranking = re_rank(initial_ranking, jaccard_similarity)
+            final_ranking = k_reciprocal_re_ranking(distmat)
             return evaluate_all(final_ranking, dataset=dataset, query=query, gallery=gallery)
             
         else:

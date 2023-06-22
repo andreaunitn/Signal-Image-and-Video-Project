@@ -99,6 +99,16 @@ def main(args):
     
     dataset, num_classes, train_loader, val_loader, test_loader = get_data(args.dataset, args.split, args.data_dir, args.height, args.width, args.batch_size, args.num_instances, args.workers, args.combine_trainval, args.t)
 
+    # Cross domain
+    if args.cross_domain:
+        cross_dataset_name = ''
+        if args.dataset == 'market1501':
+            cross_dataset_name = 'dukemtmc'
+            cross_dataset, _, cross_train_loader, cross_val_loader, cross_test_loader = get_data(cross_dataset_name, args.split, args.data_dir, args.height, args.width, args.batch_size, args.num_instances, args.workers, args.combine_trainval, args.t)
+        else:
+            cross_dataset_name = 'market1501'
+            cross_dataset, _, cross_train_loader, cross_val_loader, cross_test_loader = get_data(cross_dataset_name, args.split, args.data_dir, args.height, args.width, args.batch_size, args.num_instances, args.workers, args.combine_trainval, args.t)
+
     # -----------------------------
     # Trick 4: Last Stride
     if args.t < 4:
@@ -150,12 +160,20 @@ def main(args):
     evaluator = Evaluator(model)
 
     if args.evaluate:
-        metric.train(model, train_loader)
-        print("Validation:")
-        evaluator.evaluate(val_loader, dataset.val, dataset.val, args.dataset, metric, norm=norm, re_ranking=False)
-        print("Test:")
-        evaluator.evaluate(test_loader, dataset.query, dataset.gallery, args.dataset, metric, norm=norm, re_ranking=re_ranking)
-        return
+        if args.cross_domain:
+            metric.train(model, cross_train_loader)
+            print("Validation:")
+            evaluator.evaluate(cross_val_loader, cross_dataset.val, cross_dataset.val, cross_dataset_name, metric, norm=norm, re_ranking=False)
+            print("Test:")
+            evaluator.evaluate(cross_test_loader, cross_dataset.query, cross_dataset.gallery, cross_dataset_name, metric, norm=norm, re_ranking=re_ranking)
+            return
+        else:
+            metric.train(model, train_loader)
+            print("Validation:")
+            evaluator.evaluate(val_loader, dataset.val, dataset.val, args.dataset, metric, norm=norm, re_ranking=False)
+            print("Test:")
+            evaluator.evaluate(test_loader, dataset.query, dataset.gallery, args.dataset, metric, norm=norm, re_ranking=re_ranking)
+            return
 
     # -----------------------------
     # Trick 3: Label Smoothing
@@ -233,14 +251,19 @@ def main(args):
         }, is_best, fpath=osp.join(args.logs_dir, 'checkpoint.pth.tar'))
 
         # TODO: change this print
-        print('\n * Finished epoch {:3d}  top1: {:5.1%}  best: {:5.1%}{}\n'.format(epoch, top1, best_top1, ' *' if is_best else ''))
+        print('\n * Finished epoch {:3d}  rank-1: {:5.1%}  best: {:5.1%}{}\n'.format(epoch, top1, best_top1, ' *' if is_best else ''))
 
     # Final test
     print('Test with best model:')
     checkpoint = load_checkpoint(osp.join(args.logs_dir, 'model_best.pth.tar'))
     model.module.load_state_dict(checkpoint['state_dict'])
-    metric.train(model, train_loader)
-    evaluator.evaluate(test_loader, dataset.query, dataset.gallery, args.dataset, metric, norm=norm, re_ranking=re_ranking)
+
+    if args.cross_domain:
+        metric.train(model, cross_train_loader)
+        evaluator.evaluate(cross_test_loader, cross_dataset.query, cross_dataset.gallery, cross_dataset_name, metric, norm=norm, re_ranking=re_ranking)
+    else:
+        metric.train(model, train_loader)
+        evaluator.evaluate(test_loader, dataset.query, dataset.gallery, args.dataset, metric, norm=norm, re_ranking=re_ranking)
 
 
 if __name__ == '__main__':
@@ -287,6 +310,9 @@ if __name__ == '__main__':
 
     # re-ranking
     parser.add_argument("--re_ranking", action='store_true', help='use re-ranking method')
+
+    # cross-domain
+    parser.add_argument("--cross_domain", action='store_true', help='perform cross-domain')
 
     # trick number
     parser.add_argument('-t', type=int, default=0)
