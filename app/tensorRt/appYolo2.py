@@ -44,7 +44,7 @@ dataset_features = [] # List af all saved images features
 feature_to_id = {} # Dictionary from feature tensor to id of relative person
 new_ids = 0 # Number of new identies
 tot_ids = 0 # Total number of identities
-threshold = 0.75 # Threshold for new ids
+threshold = 0.8 # Threshold for new ids
 detect = False # At least one person has been detected
 detect_counter = 0 # Number of frames for new ids
 color_list = get_color_list() # List of colors for bounding boxes
@@ -75,7 +75,7 @@ class Predictor(BaseEngine):
 pred = Predictor(engine_path="yolov7-tiny.trt")
 
 # loading the model
-model = models.create("resnet50", num_features=1024, dropout=0, num_classes=751, last_stride=2)
+model = models.create("resnet50", num_features=1024, dropout=0, num_classes=751, last_stride=2, norm=True)
 m = load_model("../model_best.pth.tar")
 model.load_state_dict(m['state_dict'])
 
