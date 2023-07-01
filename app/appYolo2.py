@@ -92,7 +92,7 @@ cap = cv2.VideoCapture(0)
 #cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 # Loading the model
-model = models.create("resnet50", num_features=1024, dropout=0, num_classes=751, last_stride=2)
+model = models.create("resnet50", num_features=1024, dropout=0, num_classes=751, last_stride=2, norm=True)
 m = load_model("model_best.pth.tar")
 model.load_state_dict(m['state_dict'])
 
