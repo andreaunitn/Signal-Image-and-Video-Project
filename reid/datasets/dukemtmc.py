@@ -8,7 +8,7 @@ from ..utils.data import Dataset
 
 
 class DukeMTMC(Dataset):
-    url = 'https://drive.google.com/file/d/1jjE85dRCMOgRtvJ5RQV9-Afs-2_5dY3O/view'
+    url = 'https://drive.google.com/file/d/1CjZcPFnZ16eHnmfIYpx7pVF-D8T8SFUV/view?usp=drive_link'
     md5 = '62d8f3c7d6b2c5dc3d8ca6af7515847c'
 
     def __init__(self, root, split_id=0, num_val=100, download=True):

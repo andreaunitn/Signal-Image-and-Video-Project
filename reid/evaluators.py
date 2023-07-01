@@ -146,7 +146,7 @@ def pairwise_distance(features, query=None, gallery=None, metric=None):
         dist = torch.pow(x, 2).sum(dim=1, keepdim=True).expand(m, n) + \
             torch.pow(y, 2).sum(dim=1, keepdim=True).expand(n, m).t()
         dist.addmm_(x, y.t(), beta=1, alpha=-2)
-        return dist
+        return dist, x, y
     else:
         if query is None and gallery is None:
             n = len(features)

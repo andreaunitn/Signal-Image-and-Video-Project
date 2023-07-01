@@ -45,7 +45,7 @@ class RandomSizedRectCrop(object):
             area = img.size[0] * img.size[1]
 
             if doResize:
-                target_area = 128*256
+                target_area = w*h
                 aspect_ratio = 2
             else: 
                 target_area = random.uniform(0.64, 1.0) * area

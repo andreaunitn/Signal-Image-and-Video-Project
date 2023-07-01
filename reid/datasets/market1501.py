@@ -8,7 +8,7 @@ from ..utils.data import Dataset
 
 
 class Market1501(Dataset):
-    url = 'https://drive.google.com/file/d/0B8-rUzbwVRk0c054eEozWG9COHM/view'
+    url = 'https://drive.google.com/file/d/1NISy_0qDeGfQYI9Sj1tKTv1ykE_f2Dc7/view?usp=drive_link'
     md5 = '65005ab7d12ec1c44de4eeafe813e68a'
 
     def __init__(self, root, split_id=0, num_val=100, download=True):

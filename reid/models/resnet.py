@@ -72,7 +72,6 @@ class ResNet(nn.Module):
 
                     self.classifier = nn.Linear(self.num_features, self.num_classes, bias=False)
                     nn.init.normal_(self.classifier.weight, std=0.001)
-                    #nn.init.constant_(self.classifier.bias, 0.0)
                 else:
                     self.classifier = nn.Linear(self.num_features, self.num_classes)
 

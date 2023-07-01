@@ -219,6 +219,8 @@ celerybeat-schedule
 venv/
 ENV/
 
+.vs/
+
 # Spyder project settings
 .spyderproject
 
@@ -233,3 +235,4 @@ examples/*
 app/yolo/*
 *.tar
 *.jpg
+/Luo_Bag_of_Tricks_and_a_Strong_Baseline_for_Deep_Person_CVPRW_2019_paper.pdf
