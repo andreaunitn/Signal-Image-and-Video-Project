@@ -95,7 +95,7 @@ def main(args):
     assert args.batch_size % args.num_instances == 0, 'num_instances should divide batch_size'
     
     if args.height is None or args.width is None:
-        args.height, args.width = (384, 128)
+        args.height, args.width = (256, 128)
     
     dataset, num_classes, train_loader, val_loader, test_loader = get_data(args.dataset, args.split, args.data_dir, args.height, args.width, args.batch_size, args.num_instances, args.workers, args.combine_trainval, args.t)
 
