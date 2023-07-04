@@ -53,7 +53,7 @@ dataset_features = [] # List af all saved images features
 feature_to_id = {} # Dictionary from feature tensor to id of relative person
 new_ids = 0 # Number of new identies
 tot_ids = 0 # Total number of identities
-threshold = 0.75 # Threshold for new ids
+threshold = 0.8 # Threshold for new ids
 detect = False # At least one person has been detected
 detect_counter = 0 # Number of frames for new ids
 color_list = get_color_list() # List of colors for bounding boxes
@@ -83,10 +83,10 @@ layer_names = net.getLayerNames()
 output_layers = [layer_names[i-1] for i in net.getUnconnectedOutLayers()]
 
 # Load the video stream
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture("video_prova.MOV")
 
 # Loading the model
-model = models.create("resnet50", num_features=2048, dropout=0, num_classes=751, last_stride=2, norm=True)
+model = models.create("resnet50", num_features=2048, dropout=0, num_classes=702, last_stride=2, norm=True)
 m = load_model("../tricks/logs/model_best.pth.tar")
 model.load_state_dict(m['state_dict'])
 
