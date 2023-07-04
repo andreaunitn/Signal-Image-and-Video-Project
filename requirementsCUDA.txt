@@ -35,7 +35,6 @@ metric-learn==0.6.2
 numpy==1.23.5
 oauthlib==3.2.2
 onnx==1.13.1
-open-reid==0.2.0
 opencv-python==4.7.0.72
 opt-einsum==3.3.0
 packaging==23.0
