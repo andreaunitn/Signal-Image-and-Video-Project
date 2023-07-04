@@ -93,8 +93,8 @@ termcolor==2.2.0
 texttable==1.6.7
 threadpoolctl==3.1.0
 torch==2.0.0.dev20230218
-torchaudio==2.0.0.dev20230217
-torchvision==0.15.0.dev20230217
+torchaudio==2.0.0
+torchvision==0.15.0
 tqdm==4.65.0
 typing_extensions==4.4.0
 uritemplate==4.1.1
