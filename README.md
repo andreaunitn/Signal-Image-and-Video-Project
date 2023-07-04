@@ -68,4 +68,5 @@ Use the following options to modify the settings
 --combine-trainval #to use validation images during training
 ```
 
-# Remember to change triplet_loss default values like k
+### The datasets are not directly included in this repository. When executing the code follow the instructions.
+Market1501 and DukeMTMC-reID can be downloaded at https://drive.google.com/drive/folders/1pTjMzG4aoc4MgSCrXbQocREQG_HDSMWq?usp=sharing
