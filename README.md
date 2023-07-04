@@ -26,6 +26,8 @@ python3 -m pip install -r requirementsCUDA.txt #for CUDA compatible systems
 python3 -m pip install -r requirementsMAC.txt #for macOS silicon systems
 ```
 
+If you have a GPU (higly reccomended) please install torch with hardware acceleration
+
 ## Installation
 
 To install the OpenReID library with our modifications and tricks, execute the following command in the main directory of the project. 
