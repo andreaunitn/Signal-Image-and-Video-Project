@@ -15,6 +15,11 @@ To start the environment use
 source env_name/bin/activate #on unix systems
 source env_name/Scripts/activate #on Windows
 ```
+To exit the environment use
+```shell
+deactivate
+```
+
 To install the required packages use the reference file
 ```shell
 python3 -m pip install -r requirementsCUDA.txt #for CUDA compatible systems
