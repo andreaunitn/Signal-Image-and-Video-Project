@@ -26,7 +26,7 @@ python3 -m pip install -r requirementsCUDA.txt #for CUDA compatible systems
 python3 -m pip install -r requirementsMAC.txt #for macOS silicon systems
 ```
 
-If you have a GPU (higly reccomended) please install torch with hardware acceleration
+If you have a GPU (higly reccomended) install torch with hardware acceleration. It is mandatory beacuse otherwise the code does not work.
 
 ## Installation
 
