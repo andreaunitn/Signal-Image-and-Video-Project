@@ -1,28 +1,64 @@
-# Open-ReID
+# Signal, Image and Video Project
 
-Open-ReID is a lightweight library of person re-identification for research
-purpose. It aims to provide a uniform interface for different datasets, a full
-set of models and evaluation metrics, as well as examples to reproduce (near)
-state-of-the-art results.
+Welcome to our project. Follow this read.me to understand how to execute our project on your machine.
+
+## Environment setup
+
+We suggest creating a virtual environment to install all the required Python packages in.
+Use the following commands to install Virtuslenv and create a new environment.
+```shell
+python3 -m pip install virtualenv
+python3 -m venv /path/to/virtual/environment/env_name 
+```
+To start the environment use
+```shell
+source env_name/bin/activate #on unix systems
+source env_name/Scripts/activate #on Windows
+```
+To install the required packages use the reference file
+```shell
+python3 -m pip install -r requirementsCUDA.txt #for CUDA compatible systems
+python3 -m pip install -r requirementsMAC.txt #for macOS silicon systems
+```
 
 ## Installation
 
-Install [PyTorch](http://pytorch.org/) (version >= 0.2.0). Although we support
-both python2 and python3, we recommend python3 for better performance.
+To install the OpenReID library with our modifications and tricks, execute the following command in the main directory of the project. 
+Please not that this operation is required every time a change to the project is done.
 
 ```shell
-git clone https://github.com/Cysu/open-reid.git
-cd open-reid
-python setup.py install
+python3 setup.py install
 ```
 
-## Examples
+## Execution
+
+To train the model with every trick just use
 
 ```shell
-python examples/softmax_loss.py -d viper -b 64 -j 2 -a resnet50 --logs-dir logs/softmax-loss/viper-resnet50
+cd tricks
+python3 triplet_loss.py -t 6 --combine-trainval
 ```
 
-This is just a quick example. VIPeR dataset may not be large enough to train a deep neural network.
+Use the following options to modify the settings
 
-Check about more [examples](https://cysu.github.io/open-reid/examples/training_id.html)
-and [benchmarks](https://cysu.github.io/open-reid/examples/benchmarks.html).
+```shell
+-t _ #to select the tricks to use (up to that number)
+-d _ #to select the dataset to use
+-b _ #to select the batch the size
+--epochs _ #to change the number of epochs
+--num-instances _ #to select the number of image per identity
+--cross-domain #to make the final test on the other dataset (dukemtmc / market1501)
+--data-dir _ #to change the dataset directory
+--logs-dir _ #to change the logs directory
+--evaluate #to just execute the evaluation
+--resume _ #to resume training from the given checkpoint
+
+
+-j _ #to select the number of workers
+--height _ #to change the height of the input images
+--width _ #to change the width of the input images
+--re-ranking #to use re-ranking
+--combine-trainval #to use validation images during training
+```
+
+# Remember to change triplet_loss default values like k
