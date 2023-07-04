@@ -86,7 +86,7 @@ output_layers = [layer_names[i-1] for i in net.getUnconnectedOutLayers()]
 cap = cv2.VideoCapture("video_prova.MOV")
 
 # Loading the model
-model = models.create("resnet50", num_features=2048, dropout=0, num_classes=702, last_stride=2, norm=True)
+model = models.create("resnet50", num_features=2048, dropout=0, num_classes=751, last_stride=2, norm=True)
 m = load_model("../tricks/logs/model_best.pth.tar")
 model.load_state_dict(m['state_dict'])
 

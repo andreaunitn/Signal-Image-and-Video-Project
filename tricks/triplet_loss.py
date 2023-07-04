@@ -271,12 +271,12 @@ if __name__ == '__main__':
     # data
     parser.add_argument('-d', '--dataset', type=str, default='market1501', choices=datasets.names())
     parser.add_argument('-b', '--batch-size', type=int, default=64)
-    parser.add_argument('-j', '--workers', type=int, default=4)
+    parser.add_argument('-j', '--workers', type=int, default=2)
     parser.add_argument('--split', type=int, default=0)
     parser.add_argument('--height', type=int, help="input height, default: 256 for resnet*")
     parser.add_argument('--width', type=int, help="input width, default: 128 for resnet*")
     parser.add_argument('--combine-trainval', action='store_true', help="train and validation sets together for training, test set alone for evaluation")
-    parser.add_argument('--num-instances', type=int, default=4, help="each minibatch consist of (batch_size // num_instances) identities, and each identity has num_instances instances, default: 4")
+    parser.add_argument('--num-instances', type=int, default=16, help="each minibatch consist of (batch_size // num_instances) identities, and each identity has num_instances instances, default: 16")
     
     # model
     parser.add_argument('-a', '--arch', type=str, default='resnet50', choices=models.names())
