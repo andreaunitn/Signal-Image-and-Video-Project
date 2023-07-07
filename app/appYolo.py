@@ -241,7 +241,7 @@ class MainWindow(QMainWindow):
 
                     # Use the model to extract people's features
                     if torch.backends.mps.is_available():
-                        query_features = extract_cnn_feature(model, image_tensor.unsqueeze(0).to("mps"))
+                        query_features = extract_cnn_feature(model, image_tensor.unsqueeze(0).to("mps"), norm=True)
 
                     id_in_frame = 0
                     color = (0,0,0)

@@ -197,7 +197,7 @@ class MainWindow(QMainWindow):
                     image_tensor = test_transformer(image_tensor)
 
                     # Use the model to extract people's features
-                    query_features = extract_cnn_feature(model, image_tensor.unsqueeze(0).cuda())
+                    query_features = extract_cnn_feature(model, image_tensor.unsqueeze(0).cuda(), norm=True)
 
                     id_in_frame = 0
                     color = (0,0,0)
