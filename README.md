@@ -1,6 +1,9 @@
 # Signal, Image and Video Project
 
-Welcome to our project. Follow this read.me to understand how to execute our project on your machine.
+Report: [SIV.pdf](https://github.com/andreaunitn/Signal-Image-and-Video-Project/files/12252926/SIV.pdf)
+</br>
+
+Follow this read.me to understand how to execute our Signal, Image and Video project on your machine.
 
 ## Environment setup
 
@@ -10,12 +13,12 @@ Use the following commands to install Virtuslenv and create a new environment.
 python3 -m pip install virtualenv
 python3 -m venv /path/to/virtual/environment/env_name 
 ```
-To start the environment use
+To start the environment
 ```shell
 source env_name/bin/activate #on unix systems
 source env_name/Scripts/activate #on Windows
 ```
-To exit the environment use
+To exit the environment
 ```shell
 deactivate
 ```
@@ -67,6 +70,4 @@ Use the following options to modify the settings
 --re-ranking #to use re-ranking
 --combine-trainval #to use validation images during training
 ```
-
-### The datasets are not directly included in this repository. When executing the code follow the instructions.
-Market1501 and DukeMTMC-reID can be downloaded at https://drive.google.com/drive/folders/1pTjMzG4aoc4MgSCrXbQocREQG_HDSMWq?usp=sharing
+__Market1501__ and __DukeMTMC-reID__ can be downloaded [here](https://drive.google.com/drive/folders/1pTjMzG4aoc4MgSCrXbQocREQG_HDSMWq?usp=sharing).
