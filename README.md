@@ -1,6 +1,6 @@
 # Signal, Image and Video Project
 
-Report: [SIV.pdf](https://github.com/andreaunitn/Signal-Image-and-Video-Project/files/12252926/SIV.pdf)
+[Report](https://github.com/andreaunitn/Signal-Image-and-Video-Project/files/12252926/SIV.pdf)
 </br>
 
 Follow this read.me to understand how to execute our Signal, Image and Video project on your machine.
